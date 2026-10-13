@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151e25">
+<link rel="icon" href="logo.jpg">
+<title>VandB Quizz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>if(!window.Peer)document.write('<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"><\/script>')</script>
+<script>if(!window.Peer)document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"><\/script>')</script>
+<script src="qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#151e25; --bg2:#22303b; --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
+  --text:#fff7ef; --muted:#d9bfc6; --gold:#f7a325; --wine:#e8551f;
+  --c0:#e2463f; --c1:#2f7de1; --c2:#e8a317; --c3:#2ea862;
+  --ok:#2ea862; --ko:#e2463f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 20% 0%,var(--bg2),var(--bg) 60%) fixed;color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+h1,h2,h3,.display{font-family:"Bricolage Grotesque",Inter,sans-serif;letter-spacing:-.02em}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none}
+input,select{font:inherit}
+.btn{background:var(--gold);color:#151e25;font-weight:700;padding:14px 22px;border-radius:14px;font-size:1.05rem;transition:transform .1s,filter .2s}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.hidden{display:none!important}
+#app{min-height:100%}
+
+/* ---------- HOME ---------- */
+.home{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.home-card{width:100%;max-width:520px;min-width:0;text-align:center}
+.home h1{font-size:clamp(2.6rem,9vw,4.4rem);line-height:.95;margin:10px 0 14px}
+.home h1 em{font-style:normal;color:var(--gold)}
+.home p{color:var(--muted);margin-bottom:28px}
+.home .stack{display:grid;gap:12px}
+.joinrow{display:flex;gap:8px}
+.joinrow input{flex:1;width:0;min-width:0;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:14px;text-transform:uppercase;letter-spacing:.3em;text-align:center;font-weight:700;font-size:1.2rem}
+.sep{color:var(--muted);font-size:.85rem;margin:6px 0}
+.kicker{text-transform:uppercase;letter-spacing:.25em;font-size:.78rem;color:var(--gold);font-weight:700}
+
+/* ---------- TV ---------- */
+.tv{height:100vh;display:flex;flex-direction:column;padding:3vh 4vw;gap:2.4vh;font-size:clamp(14px,1.6vw,30px)}
+.tv-head{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.tv-head h1{font-size:2.6em;line-height:1}
+.tools{display:flex;gap:10px;align-items:center}
+.tools button{font-size:.75em;padding:8px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.tools button.on{background:var(--gold);color:#151e25;border-color:transparent}
+.lobby-grid{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:3vw;min-height:0}
+.joincard{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:3vh 2vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center}
+.joincard .qr{background:#fff;padding:14px;border-radius:18px;line-height:0}
+.joincard .qr img,.joincard .qr canvas{width:min(30vh,22vw)!important;height:auto!important}
+.joincard .code{font-size:1.1em;color:var(--muted)}
+.joincard .code b{display:block;font-family:"Bricolage Grotesque";font-size:3.2em;color:var(--gold);letter-spacing:.15em;line-height:1.05}
+.joincard .url{font-size:.7em;color:var(--muted);word-break:break-all}
+.players{display:flex;flex-direction:column;min-height:0}
+.players h2{font-size:1.6em;margin-bottom:1.5vh}
+.chips{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;overflow:auto}
+.chip{background:var(--card);border:1px solid var(--line);padding:.45em .9em;border-radius:999px;font-weight:600;animation:pop .35s cubic-bezier(.3,1.6,.6,1)}
+.chip.off{opacity:.4}
+.chip:hover{border-color:var(--ko)}
+.empty{color:var(--muted)}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.settings{display:flex;flex-wrap:wrap;gap:1.2vw;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:1.6vh 1.6vw;font-size:.8em}
+.settings label{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.settings select,.settings input[type=text]{background:#1b252d;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+.cat{padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.95em}
+.cat.on{background:var(--wine);color:#fff;border-color:transparent}
+.settings .btn{margin-left:auto;font-size:1.2em;padding:.6em 1.4em}
+
+.qtop{display:flex;justify-content:space-between;align-items:center;font-weight:600;color:var(--muted)}
+.pill{background:var(--wine);color:#fff;padding:.3em .9em;border-radius:999px}
+.answered b{color:var(--gold);font-size:1.4em}
+.qtext{font-size:2.6em;line-height:1.12;text-align:center;flex:1;display:grid;place-items:center;padding:0 3vw;text-wrap:balance}
+.timer{display:flex;align-items:center;gap:1.2vw}
+.track{flex:1;height:14px;background:var(--card);border-radius:99px;overflow:hidden}
+.bar{height:100%;background:var(--gold);border-radius:99px;width:100%;transform-origin:left}
+.secs{font-family:"Bricolage Grotesque";font-weight:800;font-size:2.2em;min-width:2.2ch;text-align:right}
+.secs.hot{color:var(--ko)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:1.6vh 1.4vw}
+.ch{position:relative;overflow:hidden;display:flex;align-items:center;gap:1vw;padding:2.4vh 1.6vw;border-radius:20px;font-weight:700;font-size:1.45em;min-height:12vh;transition:opacity .4s,transform .4s}
+.ch .shape{font-size:1.1em;opacity:.9;flex:none}
+.ch .lbl{position:relative;z-index:1;flex:1}
+.ch .cnt{position:relative;z-index:1;font-family:"Bricolage Grotesque";font-size:1.2em}
+.ch .fill{position:absolute;inset:0;background:rgba(0,0,0,.18);transform-origin:left;transition:transform .8s}
+.c0{background:var(--c0)}.c1{background:var(--c1)}.c2{background:var(--c2)}.c3{background:var(--c3)}
+.reveal .ch.wrong{opacity:.28;transform:scale(.97)}
+.reveal .ch.right{box-shadow:0 0 0 6px #fff,0 0 50px rgba(255,255,255,.35);transform:scale(1.02)}
+.reveal .ch.right::after{content:"✓";position:relative;z-index:1;font-size:1.4em}
+.hint{text-align:center;color:var(--muted);font-size:.75em}
+.next{align-self:center;font-size:1.1em}
+
+.lb{flex:1;display:flex;flex-direction:column;gap:1.1vh;max-width:1100px;width:100%;margin:0 auto}
+.lb h2{font-size:2.4em;text-align:center;margin-bottom:1vh}
+.row{display:flex;align-items:center;gap:1.4vw;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.2vh 1.6vw;font-size:1.3em;animation:slide .45s both}
+.row .rk{font-family:"Bricolage Grotesque";font-weight:800;width:2ch;color:var(--gold)}
+.row .nm{flex:1;font-weight:700}
+.row .gain{color:var(--ok);font-weight:700;font-size:.8em}
+.row .sc{font-family:"Bricolage Grotesque";font-weight:800}
+@keyframes slide{from{opacity:0;transform:translateY(16px)}}
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:2vw;flex:1;padding-bottom:2vh}
+.step{display:flex;flex-direction:column;align-items:center;gap:1vh;width:18vw}
+.step .who{font-weight:800;font-size:1.4em;text-align:center}
+.step .pts{color:var(--muted)}
+.step .blk{width:100%;border-radius:18px 18px 0 0;display:grid;place-items:start center;padding-top:2vh;font-family:"Bricolage Grotesque";font-weight:800;font-size:3em;color:#151e25;animation:rise .9s cubic-bezier(.2,1.2,.4,1) both}
+.p1 .blk{height:34vh;background:var(--gold);animation-delay:.9s}
+.p2 .blk{height:24vh;background:#d8d8e0;animation-delay:.45s}
+.p3 .blk{height:17vh;background:#d58a4e}
+@keyframes rise{from{transform:scaleY(0);transform-origin:bottom}}
+
+/* ---------- PHONE ---------- */
+.ph{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.ph-top{display:flex;justify-content:space-between;align-items:center;font-weight:600;color:var(--muted);font-size:.9rem;gap:8px}
+.ph-top .me{background:var(--card);border:1px solid var(--line);padding:6px 12px;border-radius:99px;color:var(--text);max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:20px 0}
+.ph-center h2{font-size:2rem;line-height:1.1}
+.ph-center p{color:var(--muted)}
+.big-emoji{font-size:4.5rem;line-height:1}
+.ph form{display:grid;gap:12px;width:100%}
+.ph input[type=text]{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:16px;font-size:1.2rem;text-align:center}
+.pq{font-weight:700;font-size:1.05rem;margin:12px 0;text-align:center;line-height:1.3}
+.pchoices{flex:1;display:grid;grid-template-rows:repeat(4,1fr);gap:10px}
+.pch{border-radius:18px;font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:12px;padding:12px 16px;text-align:left;color:#fff;min-height:64px}
+.pch .shape{font-size:1.5rem}
+.ptime{font-family:"Bricolage Grotesque";font-weight:800;font-size:1.3rem;color:var(--text)}
+.result{width:100%;border-radius:24px;padding:28px 18px}
+.result.ok{background:var(--ok)}.result.ko{background:var(--ko)}.result.none{background:var(--card);border:1px solid var(--line)}
+.result h2{font-size:2.2rem}
+.result .gain{font-family:"Bricolage Grotesque";font-weight:800;font-size:1.6rem;margin-top:6px}
+.result .corr{margin-top:10px;opacity:.95}
+.stat{display:flex;gap:10px;width:100%}
+.stat div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.stat b{display:block;font-family:"Bricolage Grotesque";font-size:1.7rem}
+.stat span{color:var(--muted);font-size:.8rem}
+.spin{width:42px;height:42px;border:4px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000c;padding:10px 16px;border-radius:12px;font-size:.9rem;z-index:9}
+.logo{display:block;max-width:100%;height:auto;-webkit-mask-image:radial-gradient(ellipse at center,#000 72%,transparent 100%);mask-image:radial-gradient(ellipse at center,#000 72%,transparent 100%)}
+.home .logo{width:min(460px,100%);margin:0 auto 6px}
+.tv-head .logo{height:11vh;width:auto}
+.ph .logo{width:min(300px,80%);margin:0 auto}
+.warn{background:#5a1a10;border:1px solid #e2463f;border-radius:12px;padding:10px 14px;font-size:.75em;color:#ffd9cf}
+
+.net{font-size:.7em;padding:6px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.net.ok::before{content:"● ";color:var(--ok)}.net.bad::before{content:"● ";color:var(--ko)}
+.banner{position:fixed;top:0;left:0;right:0;background:var(--ko);color:#fff;text-align:center;padding:8px;font-weight:700;z-index:20}
+.modal{position:fixed;inset:0;background:#000b;display:grid;place-items:center;z-index:30;padding:16px}
+.modal-box{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:22px;width:min(900px,100%);max-height:92vh;display:flex;flex-direction:column;gap:12px;font-size:15px}
+.modal-box h3{font-size:1.4rem}
+.modal-box p,.modal-box li{color:var(--muted);font-size:.9rem}
+.modal-box code{background:#0006;padding:2px 6px;border-radius:6px;color:var(--text)}
+.modal-box textarea{flex:1;min-height:260px;background:#0b1116;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:13px/1.5 ui-monospace,monospace;resize:vertical}
+.modal-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.lookq{font-size:1.3rem;font-weight:700;text-align:center;margin:10px 0;color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =====================================================================
+   CONFIGURATION — à remplir une fois (voir README)
+   ===================================================================== */
+const CONFIG = {
+  // Relais TURN (fortement recommandé pour les Wi-Fi de bar et la 4G).
+  // Compte gratuit sur metered.ca → copier l'URL "credentials" ici, ex. :
+  // "https://monbar.metered.live/api/v1/turn/credentials?apiKey=XXXXXXXX"
+  TURN_API_URL: "",
+  // Serveur PeerJS perso (optionnel, si le serveur public gratuit pose problème) :
+  // { host: "mon-serveur.onrender.com", port: 443, path: "/", secure: true }
+  PEER_SERVER: null
+};
+
+/* ===================== BANQUE DE QUESTIONS (encodée) ===================== */
+const CATS = {hist:"Histoire",geo:"Géographie",sci:"Sciences",arts:"Arts & Lettres",pop:"Cinéma & Musique",sport:"Sport",vin:"Vins & Gastronomie"};
+const BANK = "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";
+function decodeBank(s){ try{ const k="vandb-quizz", b=atob(s), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i)^k.charCodeAt(i%k.length); return JSON.parse(new TextDecoder().decode(u)); }catch(e){ return []; } }
+
+/* ===================== OUTILS ===================== */
+const PREFIX = "quizbar-vandb-v1-";
+const SHAPES = ["▲","◆","●","■"];
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rid = (n=10) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]} return a; };
+const store = { get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
+function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+function banner(msg){ let b=$("#banner"); if(!msg){ b&&b.remove(); return; } if(!b){ b=document.createElement("div"); b.id="banner"; b.className="banner"; document.body.appendChild(b);} b.textContent=msg; }
+function peerOk(){ if(window.Peer) return true; app.innerHTML=`<div class="home"><div class="home-card"><h2>Connexion impossible</h2><p>La bibliothèque réseau n'a pas pu se charger. Vérifie la connexion internet puis recharge la page.</p></div></div>`; return false; }
+
+/* Réseau : STUN + relais TURN optionnel */
+let ICE = null, HAS_TURN = false;
+async function getIce(){
+  if(ICE) return ICE;
+  const base = [{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]},{urls:"stun:stun.cloudflare.com:3478"}];
+  ICE = base;
+  if(CONFIG.TURN_API_URL){
+    try{
+      const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 6000);
+      const r = await fetch(CONFIG.TURN_API_URL, {signal:ctl.signal}); clearTimeout(t);
+      const j = await r.json();
+      if(Array.isArray(j) && j.length){ ICE = base.concat(j); HAS_TURN = true; }
+    }catch(e){}
+  }
+  return ICE;
+}
+async function makePeer(id){
+  const opts = Object.assign({debug:0, config:{iceServers: await getIce()}}, CONFIG.PEER_SERVER||{});
+  return id ? new Peer(id, opts) : new Peer(opts);
+}
+
+/* Anti-veille */
+let wakeLock = null;
+async function keepAwake(){ try{ if("wakeLock" in navigator && document.visibilityState==="visible" && !(wakeLock && !wakeLock.released)) wakeLock = await navigator.wakeLock.request("screen"); }catch(e){} }
+
+/* Voix de l'écran TV */
+const Voice = {
+  on: store.get("qb_voice", true), name: store.get("qb_voice_name", ""),
+  list(){ if(!("speechSynthesis" in window)) return []; const rank=v=>(/natural|online|neural|premium|enhanced|google/i.test(v.name)?0:/amélie|amelie|thomas|audrey|denise|henri|marie|julie/i.test(v.name)?1:2)+(/fr[-_]FR/i.test(v.lang)?0:.5); return speechSynthesis.getVoices().filter(v=>/^fr/i.test(v.lang)).sort((a,b)=>rank(a)-rank(b)); },
+  voice(){ const l=this.list(); return l.find(v=>v.name===this.name) || l[0] || null; },
+  say(text){
+    if(!this.on || !("speechSynthesis" in window) || !text) return;
+    try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang="fr-FR"; const v=this.voice(); if(v) u.voice=v; u.rate=1; speechSynthesis.speak(u); }catch(e){}
+  }
+};
+if("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => fillVoices();
+
+const params = new URLSearchParams(location.search);
+const ROOM = (params.get("room")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const SAVE_KEY = "qb_game";
+
+/* ===================== ACCUEIL ===================== */
+function home(){
+  const sv = store.get(SAVE_KEY, null);
+  const canResume = sv && sv.phase && Date.now()-sv.at < 6*3600e3 && sv.players && sv.players.length;
+  app.innerHTML = `
+  <div class="home"><div class="home-card">
+    <img class="logo" src="logo.jpg" alt="VandB Quizz Blind Test">
+    <p>L'écran TV affiche les questions, chacun répond sur son téléphone.</p>
+    <div class="stack">
+      ${canResume?`<button class="btn" id="resume">♻️ Reprendre la partie (code ${esc(sv.code)}, ${sv.players.length} joueurs)</button>`:''}
+      <button class="btn ${canResume?'ghost':''}" id="host">📺 ${canResume?'Nouvelle partie':'Lancer l\'écran TV (animateur)'}</button>
+      <div class="sep">— ou —</div>
+      <div class="joinrow"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button class="btn ghost" id="join">Rejoindre</button></div>
+    </div>
+  </div></div>`;
+  $("#host").onclick = () => { store.del(SAVE_KEY); startHost(null); };
+  if(canResume) $("#resume").onclick = () => startHost(sv);
+  const go = () => { const c=$("#code").value.trim().toUpperCase(); if(c.length===4) location.search="?room="+c; };
+  $("#join").onclick = go; $("#code").onkeydown = e => { if(e.key==="Enter") go(); };
+}
+
+/* ===================== HÔTE (ÉCRAN TV) ===================== */
+const DEFAULTS = {n:15, time:20, cats:Object.keys(CATS), auto:false, bar:"V and B", hideQ:true, custom:"mix"};
+const H = {
+  peer:null, code:"", players:new Map(), phase:"lobby",
+  settings: Object.assign({}, DEFAULTS, store.get("qb_settings", {})),
+  qs:[], qi:-1, answers:new Map(), qStart:0, raf:0, timeout:0, autoT:0, saveI:0, qrNode:null, lastGain:new Map(), online:false
+};
+const saveSettings = () => store.set("qb_settings", H.settings);
+const joinUrl = () => location.origin + location.pathname + "?room=" + H.code;
+const customQs = () => store.get("qb_custom", []);
+
+function saveGame(){
+  store.set(SAVE_KEY, {at:Date.now(), code:H.code, phase:H.phase, qs:H.qs, qi:H.qi,
+    elapsed: H.phase==="question" ? Date.now()-H.qStart : 0,
+    answers:[...H.answers], lastGain:[...H.lastGain],
+    players:[...H.players.values()].map(p=>({pid:p.pid,name:p.name,score:p.score,streak:p.streak}))});
+}
+
+async function startHost(resume){
+  if(!peerOk()) return;
+  Voice.say(" "); // débloque la synthèse vocale suite au clic
+  keepAwake();
+  app.innerHTML = `<div class="home"><div class="home-card ph-center"><div class="spin"></div><p id="st">Préparation de la connexion…</p></div></div>`;
+  await getIce();
+  let tries = 0, want = resume ? resume.code : null;
+  const tryOpen = async () => {
+    H.code = want || Array.from({length:4},()=> "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.random()*24|0]).join("");
+    const peer = await makePeer(PREFIX + H.code);
+    peer.on("open", () => {
+      H.peer = peer; H.online = true; setNet(); banner(null);
+      if(!H.qrNode || H.qrNode.dataset.code!==H.code) buildQR();
+      if(resume){ const r=resume; resume=null; restore(r); } else renderHost();
+    });
+    peer.on("error", e => {
+      if(e.type==="unavailable-id"){
+        try{ peer.destroy(); }catch(_){}
+        if(want){
+          // après un rechargement, le serveur garde l'ancien code quelques instants
+          if(++tries <= 40){ const st=$("#st"); if(st) st.textContent=`Récupération du code ${want}… (${tries}/40)`; setTimeout(tryOpen, 3000); }
+          else { want=null; toast("Ancien code indisponible : nouveau code, les joueurs doivent rescanner"); tryOpen(); }
+        } else tryOpen();
+      }
+      else if(["network","server-error","socket-error","socket-closed"].includes(e.type)){ H.online=false; setNet(); banner("Connexion au serveur perdue — reconnexion…"); setTimeout(()=>{ try{ if(peer.destroyed){ want=H.code; tryOpen(); } else if(peer.disconnected) peer.reconnect(); }catch(_){} }, 2500); }
+    });
+    peer.on("disconnected", () => { H.online=false; setNet(); banner("Connexion au serveur perdue — reconnexion…"); setTimeout(()=>{ try{ if(!peer.destroyed && peer.disconnected) peer.reconnect(); }catch(e){} }, 1500); });
+    peer.on("connection", conn => {
+      conn.on("data", d => hostData(conn, d));
+      conn.on("close", () => { const p = conn.pid && H.players.get(conn.pid); if(p && p.conn===conn){ p.connected=false; onRosterChange(); } });
+      conn.on("error", () => {});
+    });
+  };
+  tryOpen();
+  if(!startHost._bound){
+    startHost._bound = true;
+    document.addEventListener("keydown", e => {
+      if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || $(".modal")) return;
+      if(e.code==="Space"||e.key==="Enter"||e.key==="ArrowRight"){ e.preventDefault(); advance(); }
+    });
+    document.addEventListener("visibilitychange", keepAwake);
+    window.addEventListener("beforeunload", e => { if(H.phase!=="lobby"){ saveGame(); e.preventDefault(); e.returnValue=""; } });
+  }
+}
+function setNet(){ const n=$("#net"); if(!n) return; n.className="net "+(H.online?"ok":"bad"); n.textContent=(H.online?"En ligne":"Hors ligne")+(HAS_TURN?" · relais ✓":" · sans relais"); }
+
+function restore(sv){
+  H.phase = sv.phase; H.qs = sv.qs||[]; H.qi = sv.qi; H.answers = new Map(sv.answers||[]); H.lastGain = new Map(sv.lastGain||[]);
+  H.players = new Map((sv.players||[]).map(p=>[p.pid, Object.assign({}, p, {connected:false, conn:null})]));
+  if(H.phase==="question"){
+    H.qStart = Date.now() - (sv.elapsed||0);
+    const left = H.settings.time*1000 - (sv.elapsed||0);
+    if(left <= 500){ H.phase="question"; renderHost(); reveal(); return; }
+    H.timeout = setTimeout(reveal, left+300); startSaveLoop();
+  }
+  renderHost(); toast("Partie reprise — les téléphones se reconnectent automatiquement");
+  if(H.settings.auto && (H.phase==="reveal"||H.phase==="leaderboard")) H.autoT = setTimeout(advance, 6000);
+}
+
+function buildQR(){
+  const box = document.createElement("div"); box.className="qr"; box.dataset.code=H.code;
+  if(window.QRCode){ new QRCode(box,{text:joinUrl(),width:320,height:320,colorDark:"#151e25",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }
+  else { box.innerHTML = `<img alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(joinUrl())}">`; }
+  H.qrNode = box;
+}
+
+function hostData(conn, d){
+  if(!d || typeof d!=="object") return;
+  if(d.t==="join"){
+    let pid = typeof d.pid==="string" && d.pid.length<=20 ? d.pid : rid();
+    let name = String(d.name||"").replace(/\s+/g," ").trim().slice(0,16) || "Joueur";
+    let p = H.players.get(pid);
+    const taken = n => [...H.players.values()].some(o => o.pid!==pid && o.name.toLowerCase()===n.toLowerCase());
+    if(!p){
+      let base=name, k=2; while(taken(name)) name = (base.slice(0,13)+" "+k++);
+      p = {pid, name, score:0, streak:0, connected:true, conn};
+      H.players.set(pid, p);
+    } else { if(p.conn && p.conn!==conn) try{ p.conn.close(); }catch(e){} p.conn = conn; p.connected = true; }
+    conn.pid = pid;
+    send(p, playerState(p));
+    onRosterChange(); saveGame();
+  }
+  else if(d.t==="answer"){
+    const p = H.players.get(conn.pid);
+    if(!p || H.phase!=="question" || d.qi!==H.qi || H.answers.has(p.pid)) return;
+    const c = d.choice|0; if(c<0||c>3) return;
+    H.answers.set(p.pid, {choice:c, t:Date.now()-H.qStart});
+    send(p, playerState(p)); saveGame();
+    const el = $("#ans"); if(el) el.textContent = H.answers.size;
+    if(H.answers.size >= connectedCount()) setTimeout(()=>{ if(H.phase==="question") reveal(); }, 400);
+  }
+  else if(d.t==="ping"){ try{ conn.send({t:"pong"}); }catch(e){} }
+}
+function send(p, msg){ try{ if(p.conn && p.conn.open) p.conn.send(msg); }catch(e){} }
+function broadcast(){ H.players.forEach(p => send(p, playerState(p))); }
+function connectedCount(){ let n=0; H.players.forEach(p=>{ if(p.connected) n++; }); return n; }
+function ranking(){
+  const arr = [...H.players.values()].sort((a,b)=>b.score-a.score);
+  let rank=0, prev=null; arr.forEach((p,i)=>{ if(p.score!==prev){ rank=i+1; prev=p.score; } p.rank=rank; });
+  return arr;
+}
+function onRosterChange(){
+  if(H.phase==="lobby") renderLobbyPlayers();
+  else if(H.phase==="question"){
+    const el=$("#tot"); if(el) el.textContent=connectedCount();
+    if(H.answers.size>0 && H.answers.size >= connectedCount()) reveal();
+  }
+}
+
+function playerState(p){
+  const s = {t:"state", pid:p.pid, name:p.name, phase:H.phase, score:p.score, players:H.players.size, bar:H.settings.bar};
+  const q = H.qs[H.qi];
+  if(H.phase==="question"){
+    Object.assign(s,{qi:H.qi,total:H.qs.length,cat:q.c,text:H.settings.hideQ?null:q.q,choices:q.choices,
+      endsIn:Math.max(0, H.settings.time*1000-(Date.now()-H.qStart)), answered: H.answers.has(p.pid)?H.answers.get(p.pid).choice:null});
+  } else if(H.phase==="reveal"||H.phase==="leaderboard"){
+    ranking();
+    const a = H.answers.get(p.pid);
+    Object.assign(s,{qi:H.qi,total:H.qs.length,correct:q.correct,correctText:q.choices[q.correct],
+      mine:a?a.choice:null, gain:H.lastGain.get(p.pid)||0, rank:p.rank, streak:p.streak});
+  } else if(H.phase==="end"){
+    const r = ranking();
+    Object.assign(s,{rank:p.rank, podium:r.slice(0,3).map(x=>({name:x.name,score:x.score}))});
+  }
+  return s;
+}
+
+/* --- déroulé de partie --- */
+function buildPool(){
+  const s = H.settings, mine = customQs();
+  const builtin = s.custom==="only" ? [] : decodeBank(BANK).filter(q => s.cats.includes(q[0])).map(([k,q,a])=>({c:CATS[k],q,a}));
+  const perso = s.custom==="off" ? [] : mine.map(([c,q,a])=>({c,q,a}));
+  return shuffle(builtin.concat(perso));
+}
+function startGame(){
+  const pool = buildPool();
+  if(!pool.length){ toast("Aucune question : choisis des catégories ou importe tes questions"); return; }
+  H.qs = pool.slice(0, H.settings.n).map(({c,q,a}) => {
+    const order = shuffle([0,1,2,3]);
+    return {c, q, choices:order.map(i=>a[i]), correct:order.indexOf(0)};
+  });
+  H.players.forEach(p => { p.score=0; p.streak=0; });
+  H.qi = -1; nextQuestion();
+}
+function startSaveLoop(){ clearInterval(H.saveI); H.saveI = setInterval(()=>{ if(H.phase==="question") saveGame(); else clearInterval(H.saveI); }, 1000); }
+function nextQuestion(){
+  clearTimers();
+  H.qi++;
+  if(H.qi >= H.qs.length) return endGame();
+  H.phase="question"; H.answers.clear(); H.lastGain.clear(); H.qStart = Date.now();
+  broadcast(); renderHost(); saveGame(); startSaveLoop();
+  Voice.say(H.qs[H.qi].q);
+  H.timeout = setTimeout(reveal, H.settings.time*1000 + 300);
+}
+function reveal(){
+  if(H.phase!=="question") return;
+  clearTimers();
+  const q = H.qs[H.qi], limit = H.settings.time*1000;
+  H.players.forEach(p => {
+    const a = H.answers.get(p.pid);
+    if(a && a.choice===q.correct){
+      p.streak++;
+      const g = Math.round(500 + 500*Math.max(0, 1 - a.t/limit)) + Math.min(p.streak-1,3)*50;
+      p.score += g; H.lastGain.set(p.pid, g);
+    } else { p.streak = 0; H.lastGain.set(p.pid, 0); }
+  });
+  H.phase="reveal"; broadcast(); renderHost(); saveGame();
+  Voice.say("La bonne réponse était : " + q.choices[q.correct]);
+  if(H.settings.auto) H.autoT = setTimeout(advance, 7000);
+}
+function showBoard(){ clearTimers(); H.phase="leaderboard"; broadcast(); renderHost(); saveGame(); if(H.settings.auto) H.autoT=setTimeout(advance, 6000); }
+function endGame(){
+  clearTimers(); H.phase="end"; broadcast(); renderHost(); saveGame();
+  const r = ranking(); if(r[0]) Voice.say("Bravo à " + r[0].name + ", grand vainqueur avec " + r[0].score + " points !");
+}
+function backToLobby(){ clearTimers(); H.phase="lobby"; H.qi=-1; H.players.forEach(p=>{p.score=0;p.streak=0}); [...H.players].forEach(([id,p])=>{ if(!p.connected) H.players.delete(id); }); broadcast(); renderHost(); saveGame(); }
+function advance(){
+  if(H.phase==="question") reveal();
+  else if(H.phase==="reveal") (H.qi >= H.qs.length-1) ? endGame() : showBoard();
+  else if(H.phase==="leaderboard") nextQuestion();
+}
+function clearTimers(){ clearTimeout(H.timeout); clearTimeout(H.autoT); clearInterval(H.saveI); cancelAnimationFrame(H.raf); }
+
+/* --- rendu TV --- */
+function head(){
+  return `<header class="tv-head">
+    <div style="display:flex;align-items:center;gap:1.5vw"><img class="logo" src="logo.jpg" alt="VandB Quizz"><div class="kicker">${esc(H.settings.bar)} · Code ${H.code}</div></div>
+    <div class="tools">
+      <span id="net" class="net"></span>
+      <button id="voice" class="${Voice.on?'on':''}">🔊 Voix ${Voice.on?'ON':'OFF'}</button>
+      <button id="fs">⛶ Plein écran</button>
+    </div></header>`;
+}
+function bindHead(){
+  setNet();
+  $("#fs").onclick = () => { const d=document.documentElement; document.fullscreenElement ? document.exitFullscreen() : (d.requestFullscreen&&d.requestFullscreen()); };
+  $("#voice").onclick = e => { Voice.on=!Voice.on; store.set("qb_voice",Voice.on); e.target.classList.toggle("on",Voice.on); e.target.textContent="🔊 Voix "+(Voice.on?"ON":"OFF"); if(!Voice.on) try{speechSynthesis.cancel()}catch(_){} };
+}
+function renderHost(){
+  ({lobby:renderLobby, question:renderQuestion, reveal:renderReveal, leaderboard:renderBoard, end:renderEnd})[H.phase]();
+}
+function fillVoices(){
+  const sel=$("#vsel"), w=$("#vwarn"); if(!sel) return;
+  const l=Voice.list();
+  sel.innerHTML = l.map(v=>`<option ${v===Voice.voice()?'selected':''}>${esc(v.name)}</option>`).join("") || "<option>—</option>";
+  if(w) w.classList.toggle("hidden", l.length>0);
+}
+function renderLobby(){
+  const s = H.settings, nPerso = customQs().length;
+  const local = location.protocol==="file:" || /^(localhost|127\.)/.test(location.hostname);
+  app.innerHTML = `<div class="tv">${head()}
+    <div class="lobby-grid">
+      <section class="joincard">
+        <div class="kicker">Scannez pour jouer</div>
+        <div id="qrslot"></div>
+        <div class="code">ou code <b>${H.code}</b></div>
+        <div class="url">${esc(joinUrl())}</div>
+        ${local?'<div class="warn">⚠️ Page ouverte en local : les téléphones ne pourront pas rejoindre. Ouvre la version en ligne (GitHub Pages).</div>':''}
+        ${!HAS_TURN?'<div class="warn">ℹ️ Pas de relais TURN configuré : certains téléphones (4G, Wi-Fi isolé) peuvent ne pas se connecter. Voir README.</div>':''}
+      </section>
+      <section class="players"><h2 id="pcount"></h2><div class="chips" id="chips"></div></section>
+    </div>
+    <section class="settings">
+      <label>Bar <input type="text" id="bar" value="${esc(s.bar)}" maxlength="24" size="9"></label>
+      <label>Questions <select id="n">${[5,10,15,20,25,30,40].map(v=>`<option ${v===s.n?'selected':''}>${v}</option>`).join("")}</select></label>
+      <label>Temps <select id="time">${[10,15,20,30,45].map(v=>`<option value="${v}" ${v===s.time?'selected':''}>${v} s</option>`).join("")}</select></label>
+      <label><input type="checkbox" id="auto" ${s.auto?'checked':''}> Auto</label>
+      <label title="Anti-triche : la question n'apparaît que sur la TV"><input type="checkbox" id="hideQ" ${s.hideQ?'checked':''}> Question seulement sur la TV</label>
+      <label>Voix <select id="vsel"></select><button class="cat" id="vtest">Tester</button><span id="vwarn" class="warn hidden">Aucune voix FR</span></label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%">${Object.entries(CATS).map(([k,v])=>`<button class="cat ${s.cats.includes(k)?'on':''}" data-k="${k}">${v}</button>`).join("")}
+        <button class="cat" id="perso" style="border-color:var(--gold);color:var(--gold)">✏️ Questions perso (${nPerso})</button>
+        ${nPerso?`<select id="cmode" class="cat"><option value="mix" ${s.custom==="mix"?'selected':''}>Mélanger</option><option value="only" ${s.custom==="only"?'selected':''}>Seulement perso</option><option value="off" ${s.custom==="off"?'selected':''}>Sans perso</option></select>`:''}
+        <button class="btn" id="start">Lancer ▶</button></div>
+    </section></div>`;
+  $("#qrslot").appendChild(H.qrNode);
+  bindHead(); fillVoices();
+  $("#bar").oninput = e => { s.bar = e.target.value.trim() || "V and B"; saveSettings(); };
+  $("#n").onchange = e => { s.n=+e.target.value; saveSettings(); };
+  $("#time").onchange = e => { s.time=+e.target.value; saveSettings(); };
+  $("#auto").onchange = e => { s.auto=e.target.checked; saveSettings(); };
+  $("#hideQ").onchange = e => { s.hideQ=e.target.checked; saveSettings(); };
+  $("#vsel").onchange = e => { Voice.name=e.target.value; store.set("qb_voice_name",Voice.name); };
+  $("#vtest").onclick = () => { const o=Voice.on; Voice.on=true; Voice.say("Bienvenue au quiz VandB ! Bonne chance à tous."); Voice.on=o; };
+  $("#perso").onclick = openCustom;
+  if($("#cmode")) $("#cmode").onchange = e => { s.custom=e.target.value; saveSettings(); };
+  app.querySelectorAll(".cat[data-k]").forEach(b => b.onclick = () => {
+    const k=b.dataset.k, i=s.cats.indexOf(k);
+    if(i>=0){ s.cats.splice(i,1); b.classList.remove("on"); } else { s.cats.push(k); b.classList.add("on"); }
+    saveSettings();
+  });
+  $("#start").onclick = startGame;
+  renderLobbyPlayers();
+}
+function renderLobbyPlayers(){
+  const chips=$("#chips"); if(!chips) return;
+  const ps=[...H.players.values()];
+  $("#pcount").textContent = ps.length ? `${ps.length} joueur${ps.length>1?'s':''} prêt${ps.length>1?'s':''}` : "En attente des joueurs…";
+  chips.innerHTML = ps.length ? ps.map(p=>`<button class="chip ${p.connected?'':'off'}" data-pid="${p.pid}" title="Cliquer pour exclure">${esc(p.name)}</button>`).join("") : `<p class="empty">Les pseudos apparaîtront ici. Cliquez sur un pseudo pour l'exclure.</p>`;
+  chips.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    const p=H.players.get(c.dataset.pid); if(!p) return;
+    if(confirm(`Exclure « ${p.name} » ?`)){ send(p,{t:"kicked"}); setTimeout(()=>{try{p.conn.close()}catch(e){}},300); H.players.delete(p.pid); renderLobbyPlayers(); saveGame(); }
+  });
+  const st=$("#start"); if(st) st.disabled = ps.length===0;
+}
+
+/* --- questions perso (restent sur l'ordi TV, jamais publiées) --- */
+function toCSV(list){ return list.map(([c,q,a])=>[c,q,...a].map(x=>String(x).replace(/[;\n]/g,",")).join(";")).join("\n"); }
+function parseCSV(txt){
+  const ok=[], bad=[];
+  txt.split(/\r?\n/).forEach((line,i)=>{
+    if(!line.trim() || /^cat[ée]gorie\s*[;\t]/i.test(line)) return;
+    const f=line.split(line.includes("\t")&&!line.includes(";")?"\t":";").map(x=>x.trim().replace(/^"|"$/g,""));
+    if(f.length>=6 && f.slice(1,6).every(Boolean)) ok.push([f[0]||"Perso", f[1], f.slice(2,6)]); else bad.push(i+1);
+  });
+  return {ok,bad};
+}
+function openCustom(){
+  const m=document.createElement("div"); m.className="modal";
+  m.innerHTML=`<div class="modal-box">
+    <h3>✏️ Questions perso</h3>
+    <p>Une question par ligne : <code>Catégorie;Question;Bonne réponse;Faux 1;Faux 2;Faux 3</code>. Les réponses sont mélangées automatiquement. Ces questions restent enregistrées <b>sur cet ordinateur uniquement</b> (jamais visibles sur le site public). Vous pouvez aussi charger un fichier .csv (export Excel « CSV point-virgule »).</p>
+    <textarea id="csv" placeholder="Musique;Qui chante « La Bohème » ?;Charles Aznavour;Jacques Brel;Édith Piaf;Serge Gainsbourg">${esc(toCSV(customQs()))}</textarea>
+    <div class="modal-row"><input type="file" id="file" accept=".csv,.txt,text/csv,text/plain"><span id="msg" style="color:var(--muted)"></span>
+    <span style="flex:1"></span><button class="btn ghost" id="cl">Annuler</button><button class="btn" id="sv">Enregistrer</button></div></div>`;
+  document.body.appendChild(m);
+  const area=$("#csv"), msg=$("#msg");
+  const check=()=>{ const r=parseCSV(area.value); msg.textContent=`${r.ok.length} question(s) valide(s)`+(r.bad.length?` · lignes ignorées : ${r.bad.slice(0,8).join(", ")}${r.bad.length>8?"…":""}`:""); return r; };
+  area.oninput=check; check();
+  $("#file").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ let t=String(rd.result); if(/Ã©|Ã¨/.test(t)){ rd.onload=()=>{ area.value=String(rd.result); check(); }; rd.readAsText(f,"windows-1252"); return; } area.value=t; check(); }; rd.readAsText(f,"utf-8"); };
+  $("#cl").onclick=()=>m.remove();
+  $("#sv").onclick=()=>{ const r=check(); store.set("qb_custom", r.ok); m.remove(); toast(`${r.ok.length} question(s) perso enregistrée(s)`); renderLobby(); };
+}
+
+function choicesHTML(q, withCounts){
+  const counts=[0,0,0,0]; H.answers.forEach(a=>counts[a.choice]++);
+  const max = Math.max(1, ...counts);
+  return `<div class="choices">${q.choices.map((c,i)=>`
+    <div class="ch c${i} ${withCounts?(i===q.correct?'right':'wrong'):''}">
+      ${withCounts?`<div class="fill" style="transform:scaleX(${counts[i]/max})"></div>`:''}
+      <span class="shape">${SHAPES[i]}</span><span class="lbl">${esc(c)}</span>
+      ${withCounts?`<span class="cnt">${counts[i]}</span>`:''}
+    </div>`).join("")}</div>`;
+}
+function renderQuestion(){
+  const q=H.qs[H.qi];
+  app.innerHTML = `<div class="tv">${head()}
+    <div class="qtop"><span class="pill">${esc(q.c)}</span><span>Question ${H.qi+1} / ${H.qs.length}</span><span class="answered"><b id="ans">${H.answers.size}</b> / <span id="tot">${connectedCount()}</span> réponses</span></div>
+    <h2 class="qtext">${esc(q.q)}</h2>
+    <div class="timer"><div class="track"><div class="bar" id="bar"></div></div><span class="secs" id="secs">${H.settings.time}</span></div>
+    ${choicesHTML(q,false)}
+    <div class="hint">Espace / Entrée : dévoiler la réponse</div></div>`;
+  bindHead();
+  const limit=H.settings.time*1000, bar=$("#bar"), secs=$("#secs");
+  const tick=()=>{ const left=Math.max(0,limit-(Date.now()-H.qStart)); bar.style.transform=`scaleX(${left/limit})`; const s=Math.ceil(left/1000); secs.textContent=s; secs.classList.toggle("hot",s<=5); if(left>0&&H.phase==="question") H.raf=requestAnimationFrame(tick); };
+  tick();
+}
+function renderReveal(){
+  const q=H.qs[H.qi], last=H.qi>=H.qs.length-1;
+  app.innerHTML = `<div class="tv reveal">${head()}
+    <div class="qtop"><span class="pill">${esc(q.c)}</span><span>Question ${H.qi+1} / ${H.qs.length}</span><span class="answered"><b>${H.answers.size}</b> réponses</span></div>
+    <h2 class="qtext">${esc(q.q)}</h2>
+    ${choicesHTML(q,true)}
+    <button class="btn next" id="nx">${last?'Résultats finaux 🏆':'Classement ▶'}</button></div>`;
+  bindHead(); $("#nx").onclick=advance;
+}
+function renderBoard(){
+  const r=ranking().slice(0,8);
+  app.innerHTML = `<div class="tv">${head()}
+    <div class="lb"><h2>Classement après ${H.qi+1} question${H.qi?'s':''}</h2>
+    ${r.map((p,i)=>`<div class="row" style="animation-delay:${i*70}ms"><span class="rk">${p.rank}</span><span class="nm">${esc(p.name)}</span>${H.lastGain.get(p.pid)?`<span class="gain">+${H.lastGain.get(p.pid)}</span>`:''}<span class="sc">${p.score}</span></div>`).join("") || '<p class="empty">Aucun joueur</p>'}
+    </div>
+    <button class="btn next" id="nx">Question suivante ▶</button></div>`;
+  bindHead(); $("#nx").onclick=advance;
+}
+function renderEnd(){
+  const r=ranking(), [a,b,c]=r;
+  const step=(p,cls,n)=>p?`<div class="step ${cls}"><div class="who">${esc(p.name)}</div><div class="pts">${p.score} pts</div><div class="blk">${n}</div></div>`:`<div class="step ${cls}"></div>`;
+  app.innerHTML = `<div class="tv">${head()}
+    <h2 style="text-align:center;font-size:2.6em">🏆 Podium</h2>
+    <div class="podium">${step(b,"p2",2)}${step(a,"p1",1)}${step(c,"p3",3)}</div>
+    <div style="display:flex;gap:12px;justify-content:center"><button class="btn" id="again">Nouvelle partie</button></div></div>`;
+  bindHead(); $("#again").onclick=backToLobby;
+}
+
+/* ===================== JOUEUR (TÉLÉPHONE) ===================== */
+const P = { peer:null, conn:null, pid:store.get("qb_pid_"+ROOM,null), name:store.get("qb_name",""), st:null, endsAt:0, raf:0, joined:false, retry:0, kicked:false, everIn:false, openT:0, rt:0, busy:false };
+
+function playerJoin(){
+  app.innerHTML = `<div class="ph">
+    <div class="ph-top"><span class="kicker">VandB Quizz</span><span>Code ${esc(ROOM)}</span></div>
+    <div class="ph-center">
+      <img class="logo" src="logo.jpg" alt="VandB Quizz">
+      <h2>Choisis ton pseudo</h2>
+      <form id="f"><input type="text" id="nm" maxlength="16" placeholder="Ton pseudo" value="${esc(P.name)}" autocomplete="off" required><button class="btn">C'est parti !</button></form>
+    </div></div>`;
+  $("#f").onsubmit = e => { e.preventDefault(); const n=$("#nm").value.trim(); if(!n) return; P.name=n; store.set("qb_name",n); P.joined=true; keepAwake(); connect(); };
+  if(P.pid && P.name){ P.joined=true; connect(); }
+}
+function waiting(title, sub, actions){
+  app.innerHTML = `<div class="ph"><div class="ph-center"><div class="spin"></div><h2>${title}</h2><p>${sub||""}</p>${actions||""}</div></div>`;
+}
+async function connect(){
+  if(!peerOk() || P.busy || P.kicked) return;
+  P.busy = true; clearTimeout(P.rt); clearTimeout(P.openT);
+  if(!P.everIn) waiting("Connexion…","On rejoint la partie");
+  try{ if(P.conn) P.conn.close(); }catch(e){}
+  const open = () => {
+    const conn = P.conn = P.peer.connect(PREFIX+ROOM, {reliable:true});
+    // si le canal ne s'ouvre pas, le réseau bloque probablement la connexion directe
+    P.openT = setTimeout(() => { if(!conn.open && P.conn===conn){ P.busy=false; netBlocked(); } }, 15000);
+    conn.on("open", () => { clearTimeout(P.openT); P.busy=false; P.retry=0; conn.send({t:"join", pid:P.pid, name:P.name}); });
+    conn.on("data", onPData);
+    conn.on("close", () => { if(P.conn===conn) lost(); });
+    conn.on("error", () => { if(P.conn===conn) lost(); });
+  };
+  if(P.peer && !P.peer.destroyed && P.peer.open){ open(); return; }
+  try{ P.peer && P.peer.destroy(); }catch(e){}
+  const peer = P.peer = await makePeer();
+  peer.on("open", open);
+  peer.on("disconnected", () => { try{ if(!peer.destroyed) peer.reconnect(); }catch(e){} });
+  peer.on("error", e => {
+    if(P.peer!==peer) return;
+    P.busy=false; clearTimeout(P.openT);
+    if(e.type==="peer-unavailable"){
+      if(P.everIn){ waiting("L'écran TV redémarre…","Reconnexion automatique, garde cette page ouverte"); P.rt=setTimeout(connect, 3000); }
+      else { app.innerHTML = `<div class="ph"><div class="ph-center"><div class="big-emoji">🤔</div><h2>Partie introuvable</h2><p>Vérifie le code affiché sur l'écran TV.</p><button class="btn" onclick="location.search=''">Retour</button><button class="btn ghost" id="rt">Réessayer</button></div></div>`; $("#rt").onclick=connect; }
+    } else lost();
+  });
+}
+function netBlocked(){
+  waiting("Connexion bloquée", "Le réseau de ton téléphone bloque la connexion. Essaie de passer du Wi-Fi à la 4G (ou l'inverse), puis réessaie.", `<button class="btn" id="rt">Réessayer</button>`);
+  $("#rt").onclick = () => { try{ P.peer.destroy(); }catch(e){} P.peer=null; connect(); };
+}
+function lost(){
+  if(P.kicked || !P.joined) return;
+  if(P.conn && P.conn.open) return;
+  clearTimeout(P.rt); P.busy=false;
+  waiting("Reconnexion…","Garde cette page ouverte");
+  P.rt = setTimeout(connect, Math.min(1000*(1+P.retry++), 5000));
+}
+document.addEventListener("visibilitychange", () => {
+  if(!ROOM || !P.joined || document.visibilityState!=="visible") return;
+  keepAwake();
+  if(!(P.conn && P.conn.open)) connect(); else try{ P.conn.send({t:"join", pid:P.pid, name:P.name}); }catch(e){} // resynchronise l'état
+});
+
+function onPData(d){
+  if(!d||typeof d!=="object") return;
+  if(d.t==="kicked"){ P.kicked=true; store.set("qb_pid_"+ROOM,null); app.innerHTML=`<div class="ph"><div class="ph-center"><div class="big-emoji">🚪</div><h2>Tu as été retiré de la partie</h2></div></div>`; return; }
+  if(d.t!=="state") return;
+  P.everIn = true;
+  if(d.pid && d.pid!==P.pid){ P.pid=d.pid; store.set("qb_pid_"+ROOM,d.pid); }
+  const prev=P.st; P.st=d;
+  if(d.phase==="question") P.endsAt = Date.now()+d.endsIn;
+  if(d.phase==="reveal" && !(prev&&prev.phase==="reveal"&&prev.qi===d.qi) && navigator.vibrate) navigator.vibrate(d.mine===d.correct?[60,40,60]:200);
+  renderPlayer();
+}
+function topBar(extra){ const s=P.st; return `<div class="ph-top"><span class="me">${esc(s.name)}</span>${extra||`<span>${s.score} pts</span>`}</div>`; }
+function renderPlayer(){
+  cancelAnimationFrame(P.raf);
+  const s=P.st;
+  if(s.phase==="lobby"){
+    app.innerHTML = `<div class="ph">${topBar(`<span>${esc(s.bar)}</span>`)}<div class="ph-center"><img class="logo" src="logo.jpg" alt=""><h2>Tu es dans la partie !</h2><p>${s.players} joueur${s.players>1?'s':''} connecté${s.players>1?'s':''}.<br>Regarde l'écran, ça commence bientôt.</p></div></div>`;
+  }
+  else if(s.phase==="question"){
+    if(s.answered!=null){
+      app.innerHTML = `<div class="ph">${topBar(`<span class="ptime" id="pt"></span>`)}<div class="ph-center"><div class="pch c${s.answered}" style="width:100%;justify-content:center"><span class="shape">${SHAPES[s.answered]}</span>${esc(s.choices[s.answered])}</div><h2>Réponse envoyée</h2><p>Suspense… on attend les autres.</p></div></div>`;
+    } else {
+      app.innerHTML = `<div class="ph">${topBar(`<span class="ptime" id="pt"></span>`)}
+        <div class="pq"><span class="kicker">${esc(s.cat)} · ${s.qi+1}/${s.total}</span><br>${s.text?esc(s.text):'<span class="lookq">👀 Lis la question sur l\'écran</span>'}</div>
+        <div class="pchoices">${s.choices.map((c,i)=>`<button class="pch c${i}" data-i="${i}"><span class="shape">${SHAPES[i]}</span>${esc(c)}</button>`).join("")}</div></div>`;
+      app.querySelectorAll(".pch").forEach(b => b.onclick = () => {
+        const i=+b.dataset.i; app.querySelectorAll(".pch").forEach(x=>x.disabled=true); b.style.outline="4px solid #fff";
+        try{ P.conn.send({t:"answer", qi:s.qi, choice:i}); }catch(e){ toast("Envoi impossible, reconnexion…"); lost(); }
+        if(navigator.vibrate) navigator.vibrate(30);
+      });
+    }
+    const pt=$("#pt"); const tick=()=>{ const left=Math.max(0,P.endsAt-Date.now()); if(pt) pt.textContent=Math.ceil(left/1000)+" s"; if(left>0) P.raf=requestAnimationFrame(tick); }; tick();
+  }
+  else if(s.phase==="reveal"||s.phase==="leaderboard"){
+    const ok = s.mine===s.correct, none = s.mine==null;
+    app.innerHTML = `<div class="ph">${topBar()}<div class="ph-center">
+      <div class="result ${none?'none':ok?'ok':'ko'}">
+        <h2>${none?'⏰ Trop tard !':ok?'✓ Bonne réponse !':'✗ Raté !'}</h2>
+        ${ok?`<div class="gain">+${s.gain} pts${s.streak>1?` · série ×${s.streak} 🔥`:''}</div>`:`<div class="corr">Réponse : <b>${esc(s.correctText)}</b></div>`}
+      </div>
+      <div class="stat"><div><b>${s.rank}<sup>${s.rank===1?'er':'e'}</sup></b><span>sur ${s.players}</span></div><div><b>${s.score}</b><span>points</span></div></div>
+      <p>${s.phase==="leaderboard"?'Le classement est à l\'écran 👀':'Prochaine question bientôt…'}</p>
+    </div></div>`;
+  }
+  else if(s.phase==="end"){
+    const medal = ["🥇","🥈","🥉"][s.rank-1] || "🎉";
+    app.innerHTML = `<div class="ph">${topBar()}<div class="ph-center">
+      <div class="big-emoji">${medal}</div>
+      <h2>${s.rank===1?'Champion·ne du bar !':`${s.rank}<sup>e</sup> place`}</h2>
+      <div class="stat"><div><b>${s.score}</b><span>points</span></div><div><b>${s.rank}/${s.players}</b><span>classement</span></div></div>
+      <p>Merci d'avoir joué ! Reste connecté pour la prochaine partie.</p>
+    </div></div>`;
+  }
+}
+
+/* ===================== DÉMARRAGE ===================== */
+ROOM ? playerJoin() : home();
+</script>
+</body>
+</html>
