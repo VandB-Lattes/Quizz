@@ -112,6 +112,7 @@ td{color:var(--muted)}
 
   <section id="lancer">
     <h2><span class="n">3</span>Lancer la partie</h2>
+    <p>👤 <b>Identifiez-vous</b> sur l'accueil avec votre prénom d'animateur. Sur n'importe quel appareil, <span class="ui">📂 Mes parties</span> avec le même nom affiche vos parties (en cours ou terminées, avec le podium) et permet de <b>reprendre</b> une partie en cours sur un autre appareil. Nécessite la sauvegarde en ligne (jeton GitHub) sur l'appareil qui lance les parties.</p>
     <div class="two">
       <div class="card">
         <h3>A · Ordinateur + TV (conseillé)</h3>
@@ -139,10 +140,12 @@ td{color:var(--muted)}
 
   <section id="pendant">
     <h2><span class="n">4</span>Pendant la partie</h2>
+    <p>📡 <b>Caster l'écran</b> : bouton <span class="ui">📡 Caster</span> dans la régie (ou ⚙️ sur la tablette). Chromecast : choisissez la TV dans la liste (Chrome, même Wi-Fi). Smart TV, autre tablette ou 2e ordinateur : ouvrez l'adresse affichée (…/?tv=CODE) ou scannez le QR code. Le son du blind test reste sur l'ordinateur de la régie.</p>
     <ol class="steps">
       <li>Quand tout le monde est inscrit : <span class="ui">Lancer la partie ▶</span>.</li>
       <li>Lisez la question au micro. Les clients voient la question sur la TV et répondent sur leur téléphone (4 couleurs et formes).</li>
       <li>À la fin du chrono (ou plus tôt) : <span class="ui">Dévoiler ▶</span>. Lisez la bonne réponse et l'anecdote 💡 s'il y en a une. La régie affiche le <b>temps de réponse de chaque joueur</b> (⚡ = le plus rapide, ✓/✗ et points gagnés).</li>
+      <li>⏭ Les questions <b>défilent toutes seules</b> : 5 secondes après chaque réponse dévoilée, la suivante arrive. Besoin de parler au micro ? <span class="ui">⏸ Pause</span> (régie, télécommande, ou touche P) arrête le défilement ; <span class="ui">▶ Reprendre le défilement</span> repart. Les boutons restent utilisables pour avancer à la main.</li>
       <li><span class="ui">Question suivante ▶</span>. Le <b>classement s'affiche tout seul toutes les 5 questions</b> (bouton <span class="ui">Classement ▶</span> à ces moments-là). À la dernière question : podium, puis <span class="ui">Nouvelle partie</span>.</li>
       <li>😅 Quand <b>un seul joueur</b> s'est trompé et que tous les autres ont trouvé, l'écran TV affiche son nom avec une petite vanne gentille pendant quelques secondes.</li>
       <li>En fin de partie, dans la régie : <span class="ui">⏱️ Temps de réponse de toute la partie</span> = tableau joueur par joueur, question par question.</li>
@@ -154,7 +157,7 @@ td{color:var(--muted)}
       <div class="card"><h3>Gérer les joueurs</h3><ul><li>Pseudo déplacé : cliquez sur le pseudo dans la salle d'attente ou la régie → <b>Exclure</b>.</li><li>Téléphone coupé ou page rechargée : le joueur revient tout seul avec ses points (ou rescanne le petit QR code en bas à droite de la TV).</li><li>Ordinateur redémarré : Accueil → <span class="ui">♻️ Reprendre la partie</span> (pendant 6 h).</li></ul></div>
     </div>
     <div class="card"><h3>🎵 Questions blind test</h3><ul>
-      <li>L'extrait (10 ou 15 s) <b>se lance tout seul</b> : rien à cliquer. Il est joué par <b>la régie</b> : le son sort de l'ordinateur de l'animateur, donc de ses enceintes ou de la sono qui y est branchée. En mode écran unique (tablette), il sort de la tablette.</li>
+      <li>L'extrait <b>se lance tout seul</b> et dure <b>exactement le temps de réponse</b> (réglage « Temps ») : le chrono démarre quand la musique démarre, la musique s'arrête quand le chrono s'arrête : rien à cliquer. Il est joué par <b>la régie</b> : le son sort de l'ordinateur de l'animateur, donc de ses enceintes ou de la sono qui y est branchée. En mode écran unique (tablette), il sort de la tablette.</li>
       <li><b>Le chrono démarre quand l'extrait commence vraiment</b> (pas pendant le chargement de la vidéo). En attendant, la TV affiche « 🎵 Ça arrive… » et les téléphones sont verrouillés, puis « 🎵 Écoutez… ».</li>
       <li>Pas de son ? Vérifiez le volume et la sortie audio de l'ordinateur. Si le navigateur bloque le son (rare : cliquez une fois n'importe où dans la régie en début de soirée), un bouton <span class="ui">▶ Lancer l'extrait</span> apparaît. Si la vidéo ne démarre pas du tout, le chrono part quand même au bout de 15 s. <span class="ui">🔁 Rejouer l'extrait</span> est dans la régie et la télécommande.</li>
       <li>Une fois la réponse dévoilée, la TV montre la vignette du clip. Les téléphones ne reçoivent jamais le lien YouTube (anti-triche).</li>
@@ -162,7 +165,7 @@ td{color:var(--muted)}
       <li><b>Préparation avant la partie</b> : en cliquant sur <span class="ui">Lancer la partie</span>, une barre de chargement vérifie chaque extrait du blind test. Un lien mort est remplacé par son lien de secours ; un extrait illisible est retiré de la partie. <span class="ui">Passer et lancer la partie</span> permet de démarrer sans attendre.</li>
       <li>Pendant la partie, l'extrait suivant est préchargé en arrière-plan : il démarre presque tout de suite.</li>
       <li>Conseil : temps de réponse d'au moins 20 s.</li></ul></div>
-    <p class="tip">Réglages utiles (⚙️) : nombre de questions, temps (10 à 60 s), enchaînement automatique, « Question seulement sur la TV (anti-triche) », compter ou non les points de saison.</p>
+    <p class="tip">Réglages utiles (⚙️) : nombre de questions, temps (10 à 60 s), enchaînement automatique (activé d'office), « Question seulement sur la TV (anti-triche) », compter ou non les points de saison.</p>
     <div class="card"><h3>🎁 Lots à gagner</h3><ul>
       <li>Dans les réglages (⚙️ ou télécommande), rubrique <b>🎁 Lots à gagner</b> : écrivez le lot du 1er, du 2e et du 3e (laissez vide s'il n'y en a pas).</li>
       <li>Les lots s'affichent sur la TV pendant la salle d'attente (« À gagner ce soir »), puis <b>sous chaque marche du podium</b> à la fin. Les gagnants voient aussi « 🎁 Tu remportes… » sur leur téléphone.</li>
@@ -178,7 +181,7 @@ td{color:var(--muted)}
       <tr><td>⚡ Quiz express</td><td>Cocher des thèmes (ou un bouton « Années 80 »…), choisir le nombre de questions, <b>Créer le quiz</b>. 🔄 remplace une question, 🗑 la retire. Prêt en 10 secondes.</td></tr>
       <tr><td>✍️ Écrire mes questions</td><td>Question, bonne réponse, 1 à 3 mauvaises (ou Vrai / Faux), puis <b>Ajouter et continuer</b>. Idéal pour des questions sur le bar ou le quartier.</td></tr>
       <tr><td>📥 Importer un fichier</td><td>Modèle Excel (CSV point-virgule) ou fichier OpenQuizzDB (JSON).</td></tr>
-      <tr><td>🎵 Blind test</td><td>Dans une question, collez un <b>lien YouTube</b> (« Extrait YouTube »), réglez le début (ex. 1:05) et la durée (10 ou 15 s). Excel : lien en 7e colonne, début en 8e.</td></tr>
+      <tr><td>🎵 Blind test</td><td>Dans une question, collez un <b>lien YouTube</b> (« Extrait YouTube »), réglez le début (ex. 1:05) ; la durée jouée suit le temps de réponse de la partie. 🖼️ <b>Image</b> (tableau, photo) : collez le lien de l'image ou de la page « Fichier: » sur Wikipédia ; elle s'affiche en grand sur la TV (Excel : lien en 9e colonne). Thème intégré <b>Tableaux célèbres</b> : « Quel est ce tableau ? » / « Qui l'a peint ? ». Excel : lien en 7e colonne, début en 8e.</td></tr>
     </table>
     <p>Ensuite : <b>▶ Jouer ce quiz</b> sur la carte du quiz, ou choisissez-le dans ⚙️ Réglages → Quiz. La banque compte <b>2 367 questions</b> : 10 catégories avec sous-catégories, et 6 <b>Soirées décennies</b> (Années 70 à 2020).</p>
     <p class="tip">Les quiz sont sauvegardés en ligne et se retrouvent sur tous les appareils du bar une fois le jeton GitHub connecté (voir « Responsable »).</p>
