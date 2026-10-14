@@ -541,6 +541,9 @@ body::before{background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 
 .step .prize{background:#fff8ee;border:2px solid var(--acc);color:var(--ink);border-radius:12px;padding:.3em .7em;font-weight:800;text-align:center;font-size:1.05em;max-width:100%;animation:pop .6s .9s both}
 .miniqr{position:fixed;right:1vw;bottom:.8vh;z-index:5;display:flex;align-items:center;gap:.6em;background:#fff;border-radius:14px;padding:.35em .5em;box-shadow:0 4px 18px rgba(29,23,20,.18);font-size:.62em;line-height:1.25;opacity:.92}
 .miniqr .qr.mini{padding:0;background:#fff;box-shadow:none}
+.modal-box{overflow-y:auto}
+.scrch{display:grid;gap:10px;margin-top:8px}.scrch .btn{width:100%!important;max-width:none!important;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;white-space:normal}
+.scrch .btn small{font-weight:500;font-size:.8em;opacity:.8;text-transform:none;letter-spacing:0}
 .curl{word-break:break-all;font-size:.85em}
 .pzb{justify-self:end;font-weight:800;color:var(--acc);background:rgba(246,194,28,.18);padding:.3em .8em;border-radius:999px}
 .tvf-end{display:flex;align-items:center;justify-content:space-between;gap:1vw;min-width:0}
@@ -743,7 +746,7 @@ function home(){
     ${IS_IOS && !APP_MODE ? '<button class="ios-tip" id="iostip">📲 Installer l\'appli : plein écran sur iPhone et iPad</button>' : ''}
     <p class="legal">${EVIN}<br><a href="conditions.html" target="_blank">Conditions d'utilisation</a></p>
   </div></div>`;
-  $("#host").onclick = () => { store.del(SAVE_KEY); openTV(); startHost(null, "regie"); };
+  $("#host").onclick = () => chooseScreen(() => store.del(SAVE_KEY));
   $("#solo").onclick = () => { goFS(); store.del(SAVE_KEY); startHost(null, "ecran"); };
   $("#ssn").onclick = () => seasonPage(false);
   $("#mgp").onclick = gamesPage; $("#aid").onclick = () => askAdminName(home);
@@ -798,7 +801,7 @@ async function startHost(resume, mode){
   if(!peerOk()) return;
   H.mode = mode || (resume && resume.mode) || "regie";
   keepAwake();
-  if(TVCH) TVCH.onmessage = e => { if(e.data && e.data.t==="hello") pushDisplay(); };
+  if(TVCH) TVCH.onmessage = e => { const d = e.data; if(!d) return; if(d.t==="hello") pushDisplay(); else if(d.t==="ytstart" && d.qi===H.qi) ytBegin(); };
   syncQuizzes(); SEASON.sync();
   app.innerHTML = `<div class="home"><div class="home-card ph-center"><div class="spin"></div><p id="st">Préparation de la connexion…</p></div></div>`;
   await getIce();
@@ -860,7 +863,11 @@ function restore(sv){
 
 function hostData(conn, d){
   if(!d || typeof d!=="object") return;
-  if(d.t==="tvjoin"){ conn.tv = true; H.tvs.add(conn); conn.on("close", () => H.tvs.delete(conn)); tvSend(displayState()); return; }
+  if(d.t==="tvjoin"){ conn.tv = true; conn.snd = d.snd!==false; H.tvs.delete(conn); H.tvs.add(conn);
+    conn.on("close", () => { H.tvs.delete(conn); broadcast(); renderHost(); });
+    if(conn.snd && sndTarget()==="cast") toast("🔊 Écran casté relié : le son du blind test sort maintenant de la TV");
+    broadcast(); renderHost(); tvSend(displayState()); return; }
+  if(d.t==="ytstart"){ if(conn.tv && d.qi===H.qi) ytBegin(); return; }
   if(adminData(conn, d)) return;
   if(d.t==="join"){
     if(d.cgu!==CGU_VERSION){ try{ conn.send({t:"needcgu"}); }catch(e){} return; }
@@ -1208,9 +1215,13 @@ function ytFallback(){
   if(c && c.alt && c.id !== c.alt){ c.id = c.alt; c.alt = ""; try{ YTP.p.loadVideoById({videoId:c.id, startSeconds:c.s, endSeconds:c.e}); }catch(e){} ytWatch(); return; }
   toast("🎵 Cette vidéo YouTube ne peut pas être lue ici (supprimée ou intégration interdite) : passez à la suite ou corrigez le lien dans Mes quiz");
   if(typeof H!=="undefined" && H.ytWait) ytBegin();
+  else if(!(typeof H!=="undefined" && H.code) && DSP.link && c) try{ DSP.link({t:"ytstart", qi:c.qi}); }catch(e){}
 }
 /* l'extrait joue vraiment : sur l'ordinateur de la partie, ça déclenche le chrono de la question */
-function ytStarted(){ if(typeof H!=="undefined" && H.code && H.ytWait && YTP.cur && YTP.cur.qi===H.qi) ytBegin(); }
+function ytStarted(){
+  if(typeof H!=="undefined" && H.code){ if(H.ytWait && YTP.cur && YTP.cur.qi===H.qi) ytBegin(); return; }
+  if(DSP.link && YTP.cur) try{ DSP.link({t:"ytstart", qi:YTP.cur.qi}); }catch(e){}
+}
 function ytWatch(){
   clearTimeout(YTP.wt);
   // lecture automatique : on relance une fois si besoin ; le bouton n'apparaît que si le navigateur bloque vraiment le son
@@ -1589,7 +1600,7 @@ function displayState(){
   return {t:"dstate", code:H.code, url:joinUrl(), phase:H.phase, view:H.view||"", online:H.online, turn:HAS_TURN, info:quizInfo(), src:H.src||"",
     time:H.settings.time, ctl:H.mode==="ecran", auto:!!H.settings.auto, paused:!!H.paused,
     players:r.map(p=>({pid:p.pid,name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0})),
-    qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", yt2:q.yt2||"", ys:q.ys||0, yd:ytDur(), img:q.img||"", choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, nx:nxYt(), nxImg:(H.qs[H.qi+1]||{}).img||"", ytHere:H.mode!=="regie",
+    qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", yt2:q.yt2||"", ys:q.ys||0, yd:ytDur(), img:q.img||"", choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, nx:nxYt(), nxImg:(H.qs[H.qi+1]||{}).img||"", ytHere: H.mode==="regie" ? sndTarget()==="ecran" : sndTarget()==="host", snd:sndTarget(),
     counts, answered:H.answers.size, connected:connectedCount(),
     endsIn: H.phase==="question" ? leftMs() : 0, wait: H.phase==="question" && H.ytWait, board: boardDue(),
     roast: H.phase==="reveal" && q && q.roast ? q.roast : null, prizes: hasPrizes() ? prizesOf() : null,
@@ -1606,25 +1617,60 @@ function tvSend(st){
   if(!H.tvs || !H.tvs.size) return;
   const o = Object.assign({}, st, {ytHere:false, ctl:false, nx:null});
   if(o.q && o.phase==="question" && o.q.yt) o.q = Object.assign({}, o.q, {yt:"-", yt2:""});
-  H.tvs.forEach(c => { if(c.open) try{ c.send(o); }catch(e){} });
+  const snd = sndTarget()==="cast" ? sndTV() : null, withSound = snd ? Object.assign({}, st, {ytHere:true, ctl:false}) : null;
+  H.tvs.forEach(c => { if(c.open) try{ c.send(c===snd ? withSound : o); }catch(e){} });
 }
-const castUrl = () => location.origin + location.pathname + "?tv=" + H.code;
+/* où sort le son du blind test : régie, tablette (host), fenêtre TV, ou écran casté */
+function sndTV(){ let c = null; (H.tvs||[]).forEach(x => { if(x.open && x.snd) c = x; }); return c; }
+function sndTarget(){
+  const s = H.settings.son || "auto", host = H.mode==="regie" ? "regie" : "host";
+  if(s==="regie") return host;
+  if(s==="ecran") return H.mode==="regie" ? "ecran" : "host";
+  return sndTV() ? "cast" : host;
+}
+const castUrl = (snd) => location.origin + location.pathname + "?tv=" + H.code + (snd===false ? "&son=0" : "");
 function openCast(){
   if($(".modal") || !H.code) return;
   const can = "PresentationRequest" in window;
   const m = modal(`<h3>📡 Caster l'écran TV</h3>
     <p>Affichez l'écran de jeu sur une <b>TV avec Chromecast</b>, une <b>Smart TV</b>, une autre tablette ou un 2e ordinateur.</p>
+    <label class="tg"><input type="checkbox" id="csnd" checked> 🔊 Le son du blind test sort de l'écran casté (la régie devient muette)</label>
     ${can ? `<div class="modal-row"><button class="btn" id="cst">📡 Caster sur un Chromecast</button></div><p class="muted" id="cmsg">Choisissez la TV dans la liste qui s'ouvre (même Wi-Fi que cet ordinateur).</p>` : `<p class="muted">Ce navigateur ne sait pas caster directement : utilisez Chrome, ou l'une des solutions ci-dessous.</p>`}
-    <div class="remote-card"><div id="cqr" class="qr sm"></div><div><p><b>Smart TV, autre écran :</b> ouvrez cette adresse dans son navigateur ou scannez le QR code :</p><p><code class="curl">${esc(castUrl())}</code> <button class="btn ghost sm" id="ccp">Copier</button></p></div></div>
-    <p class="muted">Autre solution dans Chrome : sur la fenêtre « Écran TV », menu ⋮ → <b>Caster…</b> → choisir la TV. ${H.mode==="regie" ? "Le son du blind test reste sur l'ordinateur de la régie." : ""}</p>
+    <div class="remote-card"><div id="cqr" class="qr sm"></div><div><p><b>Smart TV, autre écran :</b> ouvrez cette adresse dans son navigateur ou scannez le QR code :</p><p><code class="curl" id="curl">${esc(castUrl())}</code> <button class="btn ghost sm" id="ccp">Copier</button></p></div></div>
+    <p class="muted">Autre solution dans Chrome : sur la fenêtre « Écran TV », menu ⋮ → <b>Caster…</b> → choisir la TV. Pour que le son parte aussi, réglez ⚙️ <b>Son du blind test</b> sur « Écran TV ».</p>
+    <details class="more" ${can?'':'open'} id="nocast"><summary>📽️ Votre vidéoprojecteur n'apparaît pas dans la liste ?</summary>
+      <p class="muted">Le bouton « Caster » ne trouve que les appareils <b>Chromecast / Google Cast</b>. La plupart des vidéoprojecteurs Wi-Fi utilisent une autre technologie : <b>Miracast</b> (« Screen Mirroring ») ou <b>AirPlay</b>.</p>
+      <ol class="steps">
+        <li><b>Ordinateur Windows + projecteur Miracast</b> : sur le projecteur, choisissez la source « Screen Mirroring / Miracast ». Sur l'ordinateur, touches <b>⊞ Windows + K</b> → choisissez le projecteur, puis <b>⊞ Windows + P</b> → <b>Étendre</b>. Enfin cliquez <b>📺 Ouvrir l'écran TV</b> : la fenêtre se place toute seule sur le projecteur. Le son suit l'écran : réglez ⚙️ Son du blind test sur « Écran TV » si vous voulez le son sur le projecteur.</li>
+        <li><b>Mac / iPad + projecteur AirPlay</b> : Centre de contrôle → <b>Recopie de l'écran</b> → le projecteur (sur Mac, choisissez « Utiliser comme écran séparé », puis 📺 Ouvrir l'écran TV).</li>
+        <li><b>Projecteur avec navigateur ou appli Android</b> : ouvrez l'adresse ci-dessus (…/?tv=${esc(H.code)}) directement sur le projecteur.</li>
+        <li><b>Le plus fiable</b> : un câble HDMI entre l'ordinateur et le projecteur (ou un Chromecast branché sur le projecteur).</li>
+      </ol>
+    </details>
     <div class="modal-row"><span style="flex:1"></span><button class="btn" id="cl">Fermer</button></div>`, "wide");
-  try{ m.querySelector("#cqr").appendChild(dQRmini(castUrl())); }catch(e){}
+  const snd = () => m.querySelector("#csnd").checked;
+  const upd = () => { const u = castUrl(snd()); m.querySelector("#curl").textContent = u; const q = m.querySelector("#cqr"); q.innerHTML = ""; try{ if(window.QRCode) new QRCode(q,{text:u,width:160,height:160,colorDark:"#1d1714",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){} };
+  upd(); m.querySelector("#csnd").onchange = upd;
   m.querySelector("#cl").onclick = () => m.remove();
-  m.querySelector("#ccp").onclick = () => { try{ navigator.clipboard.writeText(castUrl()); toast("Adresse copiée"); }catch(e){} };
+  m.querySelector("#ccp").onclick = () => { try{ navigator.clipboard.writeText(castUrl(snd())); toast("Adresse copiée"); }catch(e){} };
+  try{ if(can){ const rq = new PresentationRequest([castUrl(snd())]); rq.getAvailability().then(av => { const upd2 = () => { const el = m.querySelector("#cmsg"); if(!el) return; if(!av.value){ el.innerHTML = "⚠️ Aucun appareil Chromecast détecté sur ce réseau : voir « Votre vidéoprojecteur n'apparaît pas ? » ci-dessous."; const d = m.querySelector("#nocast"); if(d) d.open = true; } else el.textContent = "✓ Appareil Chromecast détecté : choisissez-le dans la liste."; }; upd2(); av.onchange = upd2; }).catch(()=>{}); } }catch(e){}
   const b = m.querySelector("#cst"); if(b) b.onclick = async () => {
-    try{ const req = new PresentationRequest([castUrl()]); H.cast = await req.start(); $("#cmsg").textContent = "✓ Écran envoyé sur la TV"; toast("📡 Écran TV casté"); H.cast.onterminate = () => toast("📡 Cast arrêté"); }
-    catch(e){ const el=$("#cmsg"); if(el) el.textContent = e && e.name==="NotAllowedError" ? "Cast annulé." : "Aucune TV trouvée : vérifiez que la TV et cet ordinateur sont sur le même Wi-Fi, ou utilisez l'adresse ci-dessous."; }
+    try{ const req = new PresentationRequest([castUrl(snd())]); H.cast = await req.start(); $("#cmsg").textContent = "✓ Écran envoyé sur la TV"; toast("📡 Écran TV casté"); H.cast.onterminate = () => toast("📡 Cast arrêté"); }
+    catch(e){ const el=$("#cmsg"); if(el) el.textContent = e && e.name==="NotAllowedError" ? "Cast annulé." : "Aucun appareil Chromecast trouvé : voir les autres solutions ci-dessous."; const d = m.querySelector("#nocast"); if(d) d.open = true; }
   };
+}
+/* au lancement : où afficher l'écran de jeu ? */
+function chooseScreen(before){
+  const m = modal(`<h3>📺 Où afficher l'écran de jeu ?</h3>
+    <div class="scrch">
+      <button class="btn big" id="sc2">🖥️ Sur un 2e écran ou un vidéoprojecteur branché<small>Une fenêtre « Écran TV » s'ouvre et se place sur l'autre écran</small></button>
+      <button class="btn big ghost" id="scc">📡 Caster sur une TV ou un vidéoprojecteur Wi-Fi<small>Chromecast, Smart TV, projecteur Miracast / AirPlay, autre tablette…</small></button>
+      <button class="btn ghost" id="sc0">Plus tard (régie seule)</button>
+    </div>`, "wide");
+  const go = then => { m.remove(); if(before) before(); startHost(null, "regie"); if(then) then(); };
+  m.querySelector("#sc2").onclick = () => go(() => openTV());
+  m.querySelector("#scc").onclick = () => go(() => { const t = Date.now(); const w = () => { if(typeof H!=="undefined" && H.code && H.online) openCast(); else if(Date.now()-t < 30000) setTimeout(w, 300); }; w(); });
+  m.querySelector("#sc0").onclick = () => go();
 }
 /* page ?tv=CODE : écran de jeu relié à distance */
 async function remoteTV(code){
@@ -1642,8 +1688,8 @@ async function remoteTV(code){
     peer = await makePeer();
     peer.on("open", () => {
       const c = peer.connect(PREFIX+code, {reliable:true});
-      c.on("open", () => c.send({t:"tvjoin"}));
-      c.on("data", d => { if(d && d.t==="dstate"){ last = Date.now(); d.ctl = false; d.ytHere = false; renderDisplay(d); } });
+      c.on("open", () => { DSP.link = m => { if(c.open) c.send(m); }; c.send({t:"tvjoin", snd: QS.get("son")!=="0"}); });
+      c.on("data", d => { if(d && d.t==="dstate"){ last = Date.now(); d.ctl = false; d.ytHere = !!d.ytHere && QS.get("son")!=="0"; renderDisplay(d); } });
       c.on("close", () => retry(2500, "Reconnexion à la partie…"));
       c.on("error", () => retry(2500, "Reconnexion à la partie…"));
     });
@@ -1799,6 +1845,7 @@ function displayWindow(){
   keepAwake(); document.addEventListener("visibilitychange", keepAwake);
   if(!TVCH){ app.innerHTML = `<div class="tv"><div class="ph-center"><h2>Navigateur non compatible</h2><p class="muted">Utilisez Chrome, Edge ou Firefox à jour.</p></div></div>`; return; }
   let lastSeen = 0;
+  DSP.link = m => TVCH.postMessage(m);
   TVCH.onmessage = e => { const d=e.data; if(d && d.t==="dstate"){ lastSeen=Date.now(); d.ctl=false; renderDisplay(d); } };
   TVCH.postMessage({t:"hello"});
   setInterval(() => { if(Date.now()-lastSeen > 6000) TVCH.postMessage({t:"hello"}); }, 3000);
@@ -2163,6 +2210,7 @@ function settingsHTML(s, quizzes, nb){
       <label>Temps<select data-k="time">${[10,15,20,30,45,60].map(v=>`<option value="${v}" ${v===s.time?'selected':''}>${v} s</option>`).join("")}</select></label>
     </div>
     <label class="tg"><input type="checkbox" data-k="auto" ${s.auto?'checked':''}> Enchaînement automatique</label>
+    <label>🔊 Son du blind test<select data-k="son">${[["auto","Automatique : écran casté s'il y en a un"],["regie","Ordinateur de l'animateur"],["ecran","Écran TV (fenêtre ou onglet casté)"]].map(([v,l])=>`<option value="${v}" ${(s.son||"auto")===v?'selected':''}>${l}</option>`).join("")}</select></label>
     <label class="tg"><input type="checkbox" data-k="hideQ" ${s.hideQ?'checked':''}> Question seulement sur la TV (anti-triche)</label>
     <label class="tg"><input type="checkbox" data-k="season" ${s.season!==false?'checked':''}> Compter les points pour la saison</label>
     <fieldset class="prizes"><legend>🎁 Lots à gagner <span class="muted">(facultatif, affichés sur la TV)</span></legend>
@@ -2187,7 +2235,7 @@ function renderRegie(){
   A.local = true; A.send = m => adminData(LOCALCONN, m);
   A.st = adminState(); if(A.st.phase==="question") A.endsAt = Date.now()+A.st.endsIn;
   renderRemote();
-  const s = A.st; ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, nx:s.nx, noBlur:true, wait:s.wait, time:s.settings&&s.settings.time, endsIn:s.phase==="question" ? Math.max(0, A.endsAt-Date.now()) : 0});
+  const s = A.st; ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, nx:s.nx, noBlur:true, ytHere: sndTarget()==="regie", wait:s.wait, time:s.settings&&s.settings.time, endsIn:s.phase==="question" ? Math.max(0, A.endsAt-Date.now()) : 0});
 }
 const LOCALCONN = {admin:true, open:true, send:m => { if(m && m.t==="toast") toast(m.msg); }, on(){} };
 function applySetting(k, v){
@@ -2197,6 +2245,7 @@ function applySetting(k, v){
   else if(k==="n") s.n = [0,5,10,15,20,25,30,40].includes(+v) ? +v : 15;
   else if(k==="time") s.time = [10,15,20,30,45,60].includes(+v) ? +v : 20;
   else if(k==="auto"||k==="hideQ"||k==="season") s[k] = !!v;
+  else if(k==="son"){ s.son = ["auto","regie","ecran"].includes(v) ? v : "auto"; saveSettings(); renderHost(); pushDisplay(); return; }
   else if(/^prize[123]$/.test(k)){ const p = prizesOf(); p[+k[5]-1] = String(v||"").slice(0,60); s.prizes = p; }
   else if(k==="seenreset"){ SEEN.reset(); toast("Historique des questions remis à zéro"); renderHost(); return; }
   else if(k==="themes" && Array.isArray(v)){ const ok=new Set(ALL_THEMES()), c=v.filter(x=>ok.has(x)); if(c.length) s.themes=c; }
@@ -2244,7 +2293,7 @@ function adminState(){
   const q=H.qs[H.qi], counts=[0,0,0,0]; H.answers.forEach(a=>counts[a.choice]++);
   const r=ranking();
   const sd = SEASON.data();
-  return {t:"astate", code:H.code, phase:H.phase, view:H.view, settings:H.settings, paused:!!H.paused, nb:bank().length, info:quizInfo(), local:H.mode==="regie", pin:H.pin,
+  return {t:"astate", code:H.code, phase:H.phase, view:H.view, settings:H.settings, paused:!!H.paused, snd:sndTarget(), nb:bank().length, info:quizInfo(), local:H.mode==="regie", pin:H.pin,
     season:{nom:sd.nom, bareme:sd.bareme, table:seasonTable(sd).slice(0,60).map(x=>({h:x.h,n:x.n,av:x.av,c:x.c,pts:x.pts,rank:x.rank,parties:x.parties})), joueurs:Object.entries(sd.joueurs).map(([h,j])=>({h,n:j.n}))},
     quizzes:QZ.all().map(z=>({id:z.id,name:z.name,n:z.qs.length})),
     players:r.map(p=>{ const a=H.answers.get(p.pid); return {pid:p.pid,hid:p.hid||"",name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0,season:p.season||null,ans:a?[Math.round(a.t/100),a.choice]:null}; }),
@@ -2369,8 +2418,8 @@ function renderRemote(){
       <div class="rans">${q.choices.map((c,i)=>`<div class="ra c${i} ${i===q.correct?'good':''}"><span class="shape">${letters[i]}</span><span class="lbl">${esc(c)}</span>${rev?`<b>${st.counts[i]}</b>`:(i===q.correct?'<b>✓</b>':'')}</div>`).join("")}</div>
       <p class="muted">🎤 Bonne réponse : <b class="gold">${esc(q.choices[q.correct])}</b> · ${st.answered}/${st.connected} réponses</p>
       ${q.info?`<p class="anec">💡 ${esc(q.info)}</p>`:''}
-      ${q.yt && A.local ? `<div class="rg-yt"><div class="ytslot ytart"><span>♪</span></div><small>🔊 Le son de l'extrait sort de cet ordinateur (régie)</small></div>` : ''}
-      ${q.yt?`<div class="rmyt">🎵 Blind test · extrait de ${q.yd||15} s à partir de ${fmtSecs(q.ys||0)}, joué ${A.local ? "ici" : st.local ? "sur l'ordinateur de la régie" : "par l'écran"} · <a href="${ytUrl(q.yt,q.ys||0)}" target="_blank" rel="noopener">voir sur YouTube</a>${rev?'':' <button class="btn ghost sm" id="ytre" type="button">🔁 Rejouer l\'extrait</button>'}</div>`:''}
+      ${q.yt && A.local ? `<div class="rg-yt"><div class="ytslot ytart"><span>♪</span></div><small>${st.snd==="cast" ? "🔊 Le son de l'extrait sort de l'écran casté (TV)" : st.snd==="ecran" ? "🔊 Le son de l'extrait sort de la fenêtre écran TV" : "🔊 Le son de l'extrait sort de cet ordinateur (régie)"}</small></div>` : ''}
+      ${q.yt?`<div class="rmyt">🎵 Blind test · extrait de ${q.yd||15} s à partir de ${fmtSecs(q.ys||0)}, joué ${st.snd==="cast" ? "par l'écran casté" : st.snd==="ecran" ? "par la fenêtre écran TV" : A.local ? "ici" : st.local ? "sur l'ordinateur de la régie" : "par l'écran"} · <a href="${ytUrl(q.yt,q.ys||0)}" target="_blank" rel="noopener">voir sur YouTube</a>${rev?'':' <button class="btn ghost sm" id="ytre" type="button">🔁 Rejouer l\'extrait</button>'}</div>`:''}
       ${q.img?`<div class="rmyt rmimg"><img src="${esc(q.img)}" alt="" referrerpolicy="no-referrer"><span>🖼️ Image affichée sur l'écran TV</span></div>`:''}
       ${rev && st.roast ? `<p class="roastline">😅 Seul·e à s'être trompé·e : <b>${esc(st.roast.name)}</b> — la vanne est à l'écran</p>` : ''}
       ${rTimes(st, rev)}
