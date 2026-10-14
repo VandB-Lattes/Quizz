@@ -10,22 +10,22 @@
 <title>Mode d'emploi staff · VandB Quizz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@700;800&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#1d1714;--bg2:#2a211c;--card:rgba(251,234,211,.07);--line:rgba(251,234,211,.16);--text:#fbf1e4;--muted:#cbb6a2;
-  --gold:#f6c21c;--wine:#e8602c;--teal:#2f8a85;--cream:#fbead3;--ink:#1d1714}
+:root{--bg:#fbead3;--bg2:#fff8ee;--card:rgba(29,23,20,.05);--line:rgba(29,23,20,.16);--text:#1d1714;--muted:#6d5a4b;
+  --gold:#f6c21c;--wine:#e8602c;--teal:#2f8a85;--cream:#fbead3;--ink:#1d1714;--acc:#b9441c}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:70px}
 body{background:var(--bg);color:var(--text);font:16px/1.6 "Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 16px 60px}
-body::before{content:"";position:fixed;z-index:20;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 50%,var(--teal) 50% 75%,var(--cream) 75%)}
+body::before{content:"";position:fixed;z-index:20;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 50%,var(--teal) 50% 75%,var(--ink) 75%)}
 main{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 h1,h2,h3{font-weight:800;text-transform:uppercase;letter-spacing:.01em;line-height:1.15}
 h1{font-size:clamp(1.7rem,6vw,2.4rem)}
 h1 em{font-style:normal;color:var(--wine)}
-h2{font-size:1.25rem;color:var(--gold);display:flex;align-items:center;gap:10px}
+h2{font-size:1.25rem;color:var(--acc);display:flex;align-items:center;gap:10px}
 h2 .n{font-family:Alegreya,Georgia,serif;font-variant-numeric:lining-nums;background:var(--wine);color:#fff;border-radius:50%;width:1.8em;height:1.8em;display:inline-grid;place-items:center;font-size:.85em;flex:none}
-h3{font-size:.95rem;color:var(--cream);margin-top:4px}
+h3{font-size:.95rem;color:var(--ink);margin-top:4px}
 p,li{color:var(--muted)}
 b,strong{color:var(--text)}
-a{color:var(--gold)}
+a{color:var(--acc)}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 0 6px}
 .logo{width:150px;height:auto;display:block}
 .btn{display:inline-flex;align-items:center;gap:6px;background:var(--gold);color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.03em;text-decoration:none;border:0;border-radius:10px;padding:10px 16px;box-shadow:0 4px 0 #b98f0d;cursor:pointer;font-size:.9rem;font-family:inherit}
@@ -45,7 +45,7 @@ ol.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:
 ol.steps>li{counter-increment:s;position:relative;padding:10px 12px 10px 48px;background:var(--card);border-radius:12px}
 ol.steps>li::before{content:counter(s);position:absolute;left:10px;top:9px;width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--ink);font-weight:800;display:grid;place-items:center;font-size:.9rem}
 ul{padding-left:20px;display:flex;flex-direction:column;gap:4px}
-.ui,.flow span.ui{display:inline-block;background:var(--cream);color:var(--ink);font-weight:700;font-size:.85em;padding:0 7px;border-radius:6px;white-space:nowrap}
+.ui,.flow span.ui{display:inline-block;background:var(--ink);color:var(--cream);font-weight:700;font-size:.85em;padding:0 7px;border-radius:6px;white-space:nowrap}
 kbd{display:inline-block;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;padding:0 6px;font:inherit;font-size:.85em;color:var(--text)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:640px){.two{grid-template-columns:1fr}}
@@ -60,12 +60,12 @@ kbd{display:inline-block;border:1px solid var(--line);border-bottom-width:3px;bo
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 table{width:100%;border-collapse:collapse;font-size:.92rem}
 th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}
-th{color:var(--gold);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em}
+th{color:var(--acc);text-transform:uppercase;font-size:.75rem;letter-spacing:.08em}
 td:first-child{color:var(--text);font-weight:700;width:38%}
 td{color:var(--muted)}
 .pts{display:flex;flex-wrap:wrap;gap:6px}
 .pts span{background:var(--card);border-radius:8px;padding:4px 10px;font-size:.88rem;color:var(--text)}
-.pts b{font-family:Alegreya,Georgia,serif;font-variant-numeric:lining-nums;color:var(--gold);margin-left:4px}
+.pts b{font-family:Alegreya,Georgia,serif;font-variant-numeric:lining-nums;color:var(--acc);margin-left:4px}
 .legal{text-align:center;font-size:.8rem;color:var(--muted);margin-top:8px}
 @media print{body::before,nav,.no-print{display:none!important}body{background:#fff;color:#000}section{break-inside:avoid;background:#fff;border:1px solid #ccc}p,li,td{color:#222}h2,th{color:#b84a1c}.ui{border:1px solid #999}}
 </style>
@@ -142,20 +142,29 @@ td{color:var(--muted)}
     <ol class="steps">
       <li>Quand tout le monde est inscrit : <span class="ui">Lancer la partie ▶</span>.</li>
       <li>Lisez la question au micro. Les clients voient la question sur la TV et répondent sur leur téléphone (4 couleurs et formes).</li>
-      <li>À la fin du chrono (ou plus tôt) : <span class="ui">Dévoiler ▶</span>. Lisez la bonne réponse et l'anecdote 💡 s'il y en a une.</li>
-      <li><span class="ui">Classement ▶</span> puis <span class="ui">Suivant</span>. À la dernière question : podium, puis <span class="ui">Nouvelle partie</span>.</li>
+      <li>À la fin du chrono (ou plus tôt) : <span class="ui">Dévoiler ▶</span>. Lisez la bonne réponse et l'anecdote 💡 s'il y en a une. La régie affiche le <b>temps de réponse de chaque joueur</b> (⚡ = le plus rapide, ✓/✗ et points gagnés).</li>
+      <li><span class="ui">Question suivante ▶</span>. Le <b>classement s'affiche tout seul toutes les 5 questions</b> (bouton <span class="ui">Classement ▶</span> à ces moments-là). À la dernière question : podium, puis <span class="ui">Nouvelle partie</span>.</li>
+      <li>😅 Quand <b>un seul joueur</b> s'est trompé et que tous les autres ont trouvé, l'écran TV affiche son nom avec une petite vanne gentille pendant quelques secondes.</li>
+      <li>En fin de partie, dans la régie : <span class="ui">⏱️ Temps de réponse de toute la partie</span> = tableau joueur par joueur, question par question.</li>
+      <li>📱 Pendant toute la partie, un <b>petit QR code</b> reste affiché en bas à droite de la TV avec le code de la partie : un client qui a perdu la connexion (téléphone verrouillé, batterie, page fermée) le scanne et revient avec ses points.</li>
     </ol>
     <p>Raccourcis sur l'ordinateur : <kbd>Espace</kbd>, <kbd>Entrée</kbd> ou <kbd>→</kbd> = étape suivante. Double-clic sur l'écran = plein écran.</p>
     <div class="two">
       <div class="card"><h3>Points de la partie</h3><p>Bonne réponse : <b>500 à 1 000 points</b> selon la rapidité, plus <b>50 par bonne réponse d'affilée</b> (jusqu'à +150). Mauvaise réponse ou pas de réponse : 0.</p></div>
-      <div class="card"><h3>Gérer les joueurs</h3><ul><li>Pseudo déplacé : cliquez sur le pseudo dans la salle d'attente ou la régie → <b>Exclure</b>.</li><li>Téléphone coupé ou page rechargée : le joueur revient tout seul avec ses points.</li><li>Ordinateur redémarré : Accueil → <span class="ui">♻️ Reprendre la partie</span> (pendant 6 h).</li></ul></div>
+      <div class="card"><h3>Gérer les joueurs</h3><ul><li>Pseudo déplacé : cliquez sur le pseudo dans la salle d'attente ou la régie → <b>Exclure</b>.</li><li>Téléphone coupé ou page rechargée : le joueur revient tout seul avec ses points (ou rescanne le petit QR code en bas à droite de la TV).</li><li>Ordinateur redémarré : Accueil → <span class="ui">♻️ Reprendre la partie</span> (pendant 6 h).</li></ul></div>
     </div>
     <div class="card"><h3>🎵 Questions blind test</h3><ul>
-      <li>La TV affiche <b>« 🎵 Écoutez… »</b>. L'extrait (10 ou 15 s) est joué par <b>la régie</b> : le son sort de l'ordinateur de l'animateur, donc de ses enceintes ou de la sono qui y est branchée. En mode écran unique (tablette), il sort de la tablette.</li>
-      <li>Pas de son ? Vérifiez le volume et la sortie audio de l'ordinateur, ou cliquez sur <span class="ui">▶ Lancer l'extrait</span> dans la régie. <span class="ui">🔁 Rejouer l'extrait</span> est dans la régie et la télécommande.</li>
-      <li>Une fois la réponse dévoilée (tout le monde a répondu ou fin du chrono), la TV montre la vignette du clip et chaque téléphone reçoit le bouton <b>▶ Écouter sur YouTube</b>. Jamais avant, pour éviter la triche.</li>
+      <li>L'extrait (10 ou 15 s) <b>se lance tout seul</b> : rien à cliquer. Il est joué par <b>la régie</b> : le son sort de l'ordinateur de l'animateur, donc de ses enceintes ou de la sono qui y est branchée. En mode écran unique (tablette), il sort de la tablette.</li>
+      <li><b>Le chrono démarre quand l'extrait commence vraiment</b> (pas pendant le chargement de la vidéo). En attendant, la TV affiche « 🎵 Ça arrive… » et les téléphones sont verrouillés, puis « 🎵 Écoutez… ».</li>
+      <li>Pas de son ? Vérifiez le volume et la sortie audio de l'ordinateur. Si le navigateur bloque le son (rare : cliquez une fois n'importe où dans la régie en début de soirée), un bouton <span class="ui">▶ Lancer l'extrait</span> apparaît. Si la vidéo ne démarre pas du tout, le chrono part quand même au bout de 15 s. <span class="ui">🔁 Rejouer l'extrait</span> est dans la régie et la télécommande.</li>
+      <li>Une fois la réponse dévoilée, la TV montre la vignette du clip. Les téléphones ne reçoivent jamais le lien YouTube (anti-triche).</li>
       <li>Conseil : temps de réponse d'au moins 20 s. Une vidéo supprimée ou interdite d'intégration ne se lit pas : la tester avant la soirée.</li></ul></div>
     <p class="tip">Réglages utiles (⚙️) : nombre de questions, temps (10 à 60 s), enchaînement automatique, « Question seulement sur la TV (anti-triche) », compter ou non les points de saison.</p>
+    <div class="card"><h3>🎁 Lots à gagner</h3><ul>
+      <li>Dans les réglages (⚙️ ou télécommande), rubrique <b>🎁 Lots à gagner</b> : écrivez le lot du 1er, du 2e et du 3e (laissez vide s'il n'y en a pas).</li>
+      <li>Les lots s'affichent sur la TV pendant la salle d'attente (« À gagner ce soir »), puis <b>sous chaque marche du podium</b> à la fin. Les gagnants voient aussi « 🎁 Tu remportes… » sur leur téléphone.</li>
+      <li>Loi Évin : pas d'alcool en lot (ni « verre offert », ni bouteille). Préférez un soft, un cocktail sans alcool, une planche, un café gourmand, un goodies…</li></ul></div>
+    <div class="card"><h3>🔁 Questions différentes à chaque partie</h3><p>L'appli retient les questions déjà posées sur cet ordinateur : à la partie suivante, elle pioche d'abord dans celles <b>jamais posées</b>, et ne ressort les anciennes (les plus anciennes d'abord) que quand tout le thème a été joué. Un quiz réglé « dans l'ordre » (sans ordre aléatoire) est rejoué tel quel.</p></div>
   </section>
 
   <section id="quiz">
@@ -179,6 +188,7 @@ td{color:var(--muted)}
     <ul>
       <li><span class="ui">± Bonus / malus</span> : ajouter ou retirer des points à un joueur, avec un motif.</li>
       <li><span class="ui">📺 Afficher à l'écran</span> : le classement de la saison passe sur la TV.</li>
+      <li>Pendant la préparation de la partie (salle d'attente), la TV affiche aussi automatiquement le <b>top 8 de la saison</b> ; les joueurs déjà connectés ce soir ont un badge « ce soir ».</li>
       <li><span class="ui">Barème</span> : modifier les points ci-dessus. <span class="ui">Nouvelle saison</span> : tout repart à 0, l'ancienne est archivée.</li>
       <li>Client qui change de téléphone : il retrouve ses points avec son <b>code joueur</b> (page « Classement de la saison » → « J'ai déjà un code joueur »).</li>
     </ul>
