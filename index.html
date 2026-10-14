@@ -403,6 +403,48 @@ h2.qtext{font-weight:800;letter-spacing:0}
 .pq .evin{font-size:.72rem;margin-top:8px;font-weight:600}
 .tp-note{font-size:.8rem;color:var(--muted);margin:2px 4px 0}
 .legal a{color:var(--muted)}
+/* ---- blind test ---- */
+.listen{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:3vw;align-items:center}
+.ytslot{width:100%;aspect-ratio:16/9;border-radius:18px;background:#000}
+.listen{flex:1 1 0;grid-template-rows:minmax(0,1fr);overflow:hidden}
+.listen .ytslot{height:100%;width:auto;max-width:100%;justify-self:center;align-self:center}
+.qrow{flex:1 1 0;grid-template-rows:minmax(0,1fr);overflow:hidden}
+.ytside{height:100%;display:grid!important;grid-template-rows:minmax(0,1fr) auto;justify-items:center;align-items:center}
+.ytside .ytslot{width:100%;height:auto;max-height:100%;min-width:0}
+.ytside{min-width:0;overflow:hidden}
+.tvfoot #ytre2{justify-self:start}
+.listen-txt{display:flex;flex-direction:column;gap:1.4vh}
+.listen-txt h2{font-size:3.2em;color:var(--gold);line-height:1}
+.listen-txt .qsub{font-size:1.5em;font-weight:700;color:var(--text);text-wrap:balance}
+.eq{display:flex;align-items:flex-end;gap:.35em;height:2.6em}
+.eq i{display:block;width:.55em;background:var(--wine);border-radius:3px;animation:eq 1s ease-in-out infinite;height:30%}
+.eq i:nth-child(2n){background:var(--gold);animation-delay:-.3s}.eq i:nth-child(3n){background:var(--teal);animation-delay:-.6s}.eq i:nth-child(4n){animation-delay:-.15s}
+@keyframes eq{50%{height:100%}}
+.ytart{display:grid;place-items:center;background:linear-gradient(135deg,var(--wine),var(--gold) 55%,var(--teal));font-size:min(9vw,16vh);color:var(--ink)}
+.ytart span{animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6%) rotate(-6deg)}}
+.ytthumb{object-fit:cover;display:block}
+.rg-yt{display:flex;flex-direction:column;gap:6px;align-items:center}
+.rg-yt .ytslot{width:min(100%,520px)}
+.rg-yt small{color:var(--muted)}
+.ytbox{position:fixed;z-index:5;border-radius:18px;overflow:hidden;background:#000;transition:filter .4s}
+.ytframe,.ytframe iframe,#ytp{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
+.ytbox.blind .ytframe{filter:blur(26px) saturate(1.4) brightness(.75);transform:scale(1.25)}
+.ytbox.blind::after{content:"♪";position:absolute;inset:0;display:grid;place-items:center;font-size:min(9vw,16vh);color:rgba(251,234,211,.85);text-shadow:0 4px 30px #000}
+.yt-go{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--gold);color:var(--ink);font-weight:800;border-radius:12px;padding:.8em 1.4em;font-size:max(16px,1.4vw);box-shadow:0 6px 30px #000a;cursor:pointer}
+.qrow{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 30vw;gap:2vw;align-items:center}
+.ytside{display:flex;flex-direction:column;gap:.8vh;align-items:center;text-align:center}
+.ytside p{font-size:.8em;color:var(--muted);font-weight:600}
+.ytlink{background:#e8602c;color:#fff;box-shadow:0 4px 0 #a63f17;text-decoration:none;width:100%;justify-content:center;display:flex}
+.ytfield{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:12px}
+.ytfield.on{border-style:solid;border-color:var(--wine)}
+.ytbadge{font-size:.78rem;font-weight:700;color:var(--ink)!important;background:var(--gold);border-radius:999px;padding:2px 9px;text-decoration:none!important}
+.ed-qh{gap:8px}.ed-qh .muted{margin-left:auto}
+.rbar{z-index:6}
+.rmyt{background:rgba(232,96,44,.14);border-left:4px solid var(--wine);border-radius:10px;padding:10px 12px;font-size:.9rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rmyt a{color:var(--gold)}
+a.btn[data-guide]{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.home .stack a.btn[data-guide]{border-color:rgba(246,194,28,.45)}
 /* iPhone : zones sûres (encoche) et appli plein écran */
 .tv{padding-top:max(3vh,env(safe-area-inset-top));padding-left:max(4vw,env(safe-area-inset-left));padding-right:max(4vw,env(safe-area-inset-right));padding-bottom:max(3vh,env(safe-area-inset-bottom));overscroll-behavior:none}
 .ph,.rm,.ed{padding-top:calc(14px + env(safe-area-inset-top))}
@@ -557,6 +599,7 @@ function home(){
       <button class="btn ghost" id="ssn">🏆 Classement de la saison</button>
       <button class="btn ghost" id="edq">🛠️ Créer / modifier mes quiz</button>
       <button class="btn ghost" id="rmt">🎛️ Télécommande animateur</button>
+      <a class="btn ghost " href="guide.html" target="_blank" rel="noopener" data-guide>📖 Mode d'emploi staff</a>
       <div class="sep">— ou —</div>
       <div class="joinrow"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button class="btn ghost" id="join">Rejoindre</button></div>
     </div>
@@ -710,12 +753,12 @@ function playerState(p){
     season: H.settings.season ? (p.season || seasonOf(p.hid)) : null, seasonName: SEASON.data().nom};
   const q = H.qs[H.qi];
   if(H.phase==="question"){
-    Object.assign(s,{qi:H.qi,total:H.qs.length,cat:q.c,alc:!!q.alc,text:H.settings.hideQ?null:q.q,choices:q.choices,
+    Object.assign(s,{qi:H.qi,total:H.qs.length,cat:q.c,alc:!!q.alc,blind:!!q.yt,text:H.settings.hideQ?null:q.q,choices:q.choices,
       endsIn:Math.max(0, H.settings.time*1000-(Date.now()-H.qStart)), answered: H.answers.has(p.pid)?H.answers.get(p.pid).choice:null});
   } else if(H.phase==="reveal"||H.phase==="leaderboard"){
     ranking();
     const a = H.answers.get(p.pid);
-    Object.assign(s,{qi:H.qi,total:H.qs.length,correct:q.correct,correctText:q.choices[q.correct],
+    Object.assign(s,{qi:H.qi,total:H.qs.length,correct:q.correct,correctText:q.choices[q.correct],ytLink:q.yt?ytUrl(q.yt,q.ys||0):"",
       mine:a?a.choice:null, gain:H.lastGain.get(p.pid)||0, rank:p.rank, streak:p.streak});
   } else if(H.phase==="end"){
     const r = ranking();
@@ -735,9 +778,10 @@ function startGame(){
   const pool = buildPool();
   if(!pool.length){ toast("Aucune question : choisis des catégories ou un quiz qui contient des questions"); return; }
   const zq = H.settings.quiz!=="builtin" ? QZ.get(H.settings.quiz) : null; H.src = (zq && zq.source) || "";
-  H.qs = pool.slice(0, H.settings.n || pool.length).map(({c,q,a,info,alc}) => {
+  H.qs = pool.slice(0, H.settings.n || pool.length).map(({c,q,a,info,alc,yt,ys,yd}) => {
     const order = shuffle(a.map((_,i)=>i));
-    return {c, q, info, alc: alc || isAlc({q,a}), choices:order.map(i=>a[i]), correct:order.indexOf(0)};
+    const it = {c, q, info, alc: alc || isAlc({q,a}), choices:order.map(i=>a[i]), correct:order.indexOf(0)};
+    return withYt(it, {yt,ys,yd});
   });
   H.players.forEach(p => { p.score=0; p.streak=0; p.nAns=0; p.nOk=0; p.maxStreak=0; p.season=null; });
   H.gid = rid(8); H.view = ""; H.qi = -1; nextQuestion();
@@ -747,7 +791,7 @@ function nextQuestion(){
   clearTimers();
   H.qi++;
   if(H.qi >= H.qs.length) return endGame();
-  H.phase="question"; H.answers.clear(); H.lastGain.clear(); H.qStart = Date.now();
+  H.phase="question"; H.answers.clear(); H.lastGain.clear(); H.qStart = Date.now(); H.ytN = 0;
   broadcast(); renderHost(); saveGame(); startSaveLoop();
   H.timeout = setTimeout(reveal, H.settings.time*1000 + 300);
 }
@@ -795,10 +839,96 @@ function parseCSV(txt){
     if(!line.trim() || /^\s*"?cat[ée]gorie"?\s*[;\t,]/i.test(line)) return;
     const f=splitCSV(line, sep);
     const ans=f.slice(2,6).filter(Boolean);
-    if(f.length>=4 && f[1] && f[2] && ans.length>=2){ const k=normQ(f[1])+"|"+normQ(f[2]); if(seen.has(k)) return; seen.add(k); ok.push([f[0]||"Quiz", f[1], ans]); } else bad.push(i+1);
+    if(f.length>=4 && f[1] && f[2] && ans.length>=2){ const k=normQ(f[1])+"|"+normQ(f[2]); if(seen.has(k)) return; seen.add(k);
+      const y = f[6] ? ytParse(f[6]) : null; if(f[6] && !y){ bad.push(i+1); return; }
+      const ys = f[7] ? ytSecs(f[7]) : (y ? y.s : 0);
+      ok.push([f[0]||"Quiz", f[1], ans, y ? {yt:y.id, ys:isNaN(ys)?0:ys, yd:15} : null]); } else bad.push(i+1);
   });
   return {ok,bad};
 }
+/* ===================== BLIND TEST (extraits YouTube) =====================
+   L'extrait est joué par l'écran TV (10 ou 15 s, image floutée). Les téléphones reçoivent le lien YouTube
+   seulement une fois la réponse dévoilée (tous les joueurs ont répondu, ou fin du chrono). Rien n'est hébergé sur le site. */
+function ytSecs(v){
+  v = String(v==null?"":v).trim(); if(!v) return 0; if(/^\d+$/.test(v)) return +v;
+  let m = v.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/); if(m) return m[3]!=null ? (+m[1])*3600+(+m[2])*60+(+m[3]) : (+m[1])*60+(+m[2]);
+  m = v.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/); if(m && (m[1]||m[2]||m[3])) return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0);
+  return NaN;
+}
+function ytParse(s){
+  s = String(s||"").trim(); if(!s) return null;
+  const m = s.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  const id = m ? m[1] : (/^[A-Za-z0-9_-]{11}$/.test(s) ? s : null); if(!id) return null;
+  const t = s.match(/[?&#](?:t|start)=([0-9hms:]+)/); const sec = t ? ytSecs(t[1]) : 0;
+  return {id, s: isNaN(sec) ? 0 : sec};
+}
+const fmtSecs = n => `${Math.floor(n/60)}:${String(n%60).padStart(2,"0")}`;
+const ytUrl = (id, s) => `https://www.youtube.com/watch?v=${id}${s?`&t=${s}s`:""}`;
+function ytClean(x){ const id = String((x&&x.yt)||""); if(!/^[A-Za-z0-9_-]{11}$/.test(id)) return null; return {yt:id, ys:Math.max(0, Math.min(36000, parseInt(x.ys)||0)), yd: +x.yd===10 ? 10 : 15}; }
+const withYt = (item, x) => { const y = ytClean(x); return y ? Object.assign(item, y) : item; };
+
+/* ---- lecteur sur l'écran TV ---- */
+const YTP = {p:null, api:null, key:"", box:null, cur:null, wt:0};
+function ytApi(){
+  if(window.YT && YT.Player) return Promise.resolve();
+  if(YTP.api) return YTP.api;
+  YTP.api = new Promise((res, rej) => {
+    const prev = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { try{ prev && prev(); }catch(e){} res(); };
+    const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; s.async = true;
+    s.onerror = () => { YTP.api = null; rej(new Error("YouTube indisponible")); }; document.head.appendChild(s);
+    setTimeout(() => { if(!(window.YT && YT.Player)){ YTP.api = null; rej(new Error("délai dépassé")); } }, 12000);
+  });
+  return YTP.api;
+}
+function ytBox(){
+  if(!YTP.box){
+    const b = document.createElement("div"); b.id = "ytbox"; b.className = "ytbox hidden";
+    b.innerHTML = `<div class="ytframe"><div id="ytp"></div></div><button class="yt-go hidden" id="ytgo" type="button">▶ Lancer l'extrait</button>`;
+    document.body.appendChild(b);
+    b.querySelector("#ytgo").onclick = () => { try{ YTP.p.seekTo(YTP.cur.s, true); YTP.p.unMute(); YTP.p.playVideo(); }catch(e){} b.querySelector("#ytgo").classList.add("hidden"); };
+    YTP.box = b;
+  }
+  return YTP.box;
+}
+function ytPlace(){
+  const b = YTP.box, slot = $("#ytslot"); if(!b) return;
+  if(!slot){ b.classList.add("hidden"); return; }
+  const r = slot.getBoundingClientRect(); Object.assign(b.style, {left:r.left+"px", top:r.top+"px", width:r.width+"px", height:r.height+"px"});
+}
+window.addEventListener("resize", () => ytPlace());
+window.addEventListener("scroll", () => ytPlace(), {passive:true});
+function ytStop(){ clearTimeout(YTP.wt); try{ YTP.p && YTP.p.pauseVideo && YTP.p.pauseVideo(); }catch(e){} if(YTP.box) YTP.box.classList.add("hidden"); YTP.key = ""; }
+function ytSync(T){
+  const q = T && T.q, on = q && q.yt && T.ytHere!==false && !(T.view==="season" && T.season) && (T.phase==="question" || T.phase==="reveal");
+  if(!on){ if(YTP.key || (YTP.box && !YTP.box.classList.contains("hidden"))) ytStop(); return; }
+  const b = ytBox(); b.classList.remove("hidden"); b.classList.toggle("blind", T.phase==="question" && !T.noBlur); b.classList.toggle("clear", T.phase==="reveal");
+  ytPlace(); requestAnimationFrame(ytPlace);
+  const key = [q.yt, q.ys, T.qi, T.ytn||0].join("|");
+  if(T.phase==="question" && key !== YTP.key){ YTP.key = key; YTP.cur = {id:q.yt, s:q.ys||0, e:(q.ys||0)+(q.yd||15)}; ytPlay(); }
+}
+async function ytPlay(){
+  const c = YTP.cur; if(!c) return;
+  try{ await ytApi(); }catch(e){ toast("🎵 Extrait YouTube indisponible : vérifiez la connexion internet"); return; }
+  const go = $("#ytgo");
+  if(!YTP.p){
+    YTP.p = new YT.Player("ytp", {width:"100%", height:"100%", videoId:c.id,
+      playerVars:{start:c.s, end:c.e, autoplay:1, controls:0, disablekb:1, fs:0, iv_load_policy:3, modestbranding:1, playsinline:1, rel:0},
+      events:{
+        onReady: e => { try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} ytWatch(); },
+        onStateChange: e => { if(e.data===1 && go) go.classList.add("hidden"); },
+        onError: () => toast("🎵 Cette vidéo YouTube ne peut pas être lue ici (supprimée ou intégration interdite)")
+      }});
+  } else {
+    try{ YTP.p.loadVideoById({videoId:c.id, startSeconds:c.s, endSeconds:c.e}); YTP.p.unMute(); }catch(e){}
+    ytWatch();
+  }
+}
+function ytWatch(){
+  clearTimeout(YTP.wt);
+  YTP.wt = setTimeout(() => { try{ const st = YTP.p.getPlayerState(); if(st!==1 && st!==0 && $("#ytgo")) $("#ytgo").classList.remove("hidden"); }catch(e){} }, 3000);
+}
+function ytReplay(){ if(typeof H!=="undefined" && H.phase==="question"){ H.ytN = (H.ytN||0)+1; pushDisplay(); sendAdmins(); } }
+
 /* ===================== MES QUIZ (éditeur admin) ===================== */
 const QZ = {
   all(){
@@ -812,7 +942,7 @@ const QZ = {
 };
 function cleanQuiz(o, fallbackName){
   // accepte un quiz exporté (JSON) et le nettoie
-  const qs = (Array.isArray(o.qs)?o.qs:[]).map(x=>{ const y={c:String(x.c||"Quiz").slice(0,40), q:String(x.q||"").slice(0,300), a:(Array.isArray(x.a)?x.a:[]).map(v=>String(v).slice(0,120)).filter(v=>v.trim()).slice(0,4)}; if(x.info) y.info=String(x.info).slice(0,400); return y; }).filter(x=>x.q.trim() && x.a.length>=2);
+  const qs = (Array.isArray(o.qs)?o.qs:[]).map(x=>{ const y={c:String(x.c||"Quiz").slice(0,40), q:String(x.q||"").slice(0,300), a:(Array.isArray(x.a)?x.a:[]).map(v=>String(v).slice(0,120)).filter(v=>v.trim()).slice(0,4)}; if(x.info) y.info=String(x.info).slice(0,400); return withYt(y, x); }).filter(x=>x.q.trim() && x.a.length>=2);
   const z = {id:rid(6), name:String(o.name||fallbackName||"Quiz importé").slice(0,60), shuffle:o.shuffle!==false, qs};
   if(o.source) z.source = String(o.source).slice(0,120);
   return z;
@@ -860,7 +990,7 @@ function slug(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").repla
 
 function edShell(title, body, back){
   app.innerHTML = `<div class="ed">
-    <div class="ed-top">${back?`<button class="btn ghost sm" id="back">← ${back}</button>`:`<a class="btn ghost sm" href="${location.pathname}">← Accueil</a>`}<img class="logo mini" src="logo.png" alt=""></div>
+    <div class="ed-top">${back?`<button class="btn ghost sm" id="back">← ${back}</button>`:`<a class="btn ghost sm" href="${location.pathname}">← Accueil</a>`}<span style="display:flex;align-items:center;gap:10px"><a class="btn ghost sm" href="guide.html" target="_blank" rel="noopener" data-guide>📖 Aide</a><img class="logo mini" src="logo.png" alt=""></span></div>
     <h2>${title}</h2>${body}</div>`;
 }
 
@@ -943,7 +1073,7 @@ function editorHome(){
     for(const f of files){
       const txt = await readFile(f), base = f.name.replace(/\.\w+$/,""); let z = null;
       try{ const o = JSON.parse(txt); z = (o && Array.isArray(o.qs)) ? cleanQuiz(o, base) : Array.isArray(o) && o[0] && o[0].q ? cleanQuiz({qs:o}, base) : parseOQDB(o, base); }
-      catch(_){ const r = parseCSV(txt); z = {id:rid(6), name:base, shuffle:true, qs:r.ok.map(([c,q,a])=>({c,q,a}))}; }
+      catch(_){ const r = parseCSV(txt); z = {id:rid(6), name:base, shuffle:true, qs:r.ok.map(([c,q,a,y])=>withYt({c,q,a}, y))}; }
       if(!z || !z.qs.length){ failed.push(f.name); continue; }
       QZ.put(z); last=z; total+=z.qs.length;
     }
@@ -986,7 +1116,7 @@ function editQuiz(id, hint){
       <label class="tg"><input type="checkbox" id="shuf" ${z.shuffle?'checked':''}> Ordre aléatoire</label></div>
     <div class="ed-list" id="ql">${z.qs.map((x,i)=>`
       <div class="ed-q">
-        <div class="ed-qh"><span class="pill sm">${esc(x.c||z.name)}</span><span class="muted">#${i+1}</span></div>
+        <div class="ed-qh"><span class="pill sm">${esc(x.c||z.name)}</span>${x.yt?`<a class="ytbadge" href="${ytUrl(x.yt,x.ys||0)}" target="_blank" rel="noopener">🎵 ${fmtSecs(x.ys||0)} · ${x.yd||15} s</a>`:''}<span class="muted">#${i+1}</span></div>
         <div class="ed-qt">${esc(x.q)}</div>
         <div class="ed-ans">${x.a.map((v,k)=>`<span class="${k===0?'good':''}">${k===0?'✓ ':''}${esc(v)}</span>`).join("")}</div>
         <div class="ed-qa"><button data-a="edit" data-i="${i}">✏️ Modifier</button>${bankThemeOf(x)?`<button data-a="swap" data-i="${i}" title="Remplacer par une autre question du même thème">🔄 Remplacer</button>`:''}<button data-a="up" data-i="${i}" ${i?'':'disabled'}>↑</button><button data-a="down" data-i="${i}" ${i<z.qs.length-1?'':'disabled'}>↓</button><button data-a="del" data-i="${i}" class="danger">🗑</button></div>
@@ -1039,6 +1169,12 @@ function editQuestion(z, idx){
       </div>
       <div id="tf" ${mode==='tf'?'':'hidden'}><div class="fl">La bonne réponse est…</div>
         <div class="seg" id="tfv"><button type="button" data-v="Vrai" class="${tfVal==='Vrai'?'on':''}">✅ Vrai</button><button type="button" data-v="Faux" class="${tfVal==='Faux'?'on':''}">❌ Faux</button></div></div>
+      <div class="ytfield ${x.yt?'on':''}" id="ytf">
+        <label class="fl">🎵 Extrait YouTube <small class="muted">(blind test, facultatif)</small><input id="yt" value="${x.yt?esc(ytUrl(x.yt,x.ys||0)):''}" placeholder="Coller le lien : https://youtu.be/…" inputmode="url" autocomplete="off"></label>
+        <div class="srow"><label class="fl">Début de l'extrait<input id="ys" value="${x.yt?fmtSecs(x.ys||0):''}" placeholder="0:00"></label>
+          <label class="fl">Durée jouée<select id="yd"><option value="10" ${x.yd==10?'selected':''}>10 secondes</option><option value="15" ${x.yd!=10?'selected':''}>15 secondes</option></select></label></div>
+        <small class="muted" id="ytmsg">${x.yt?'✓ Vidéo reconnue':'Joué sur l\'écran TV (image floutée) pendant la question ; le lien est envoyé aux téléphones une fois la réponse dévoilée.'}</small>
+      </div>
       <details class="more" ${x.info||x.c?'open':''}><summary>Plus d'options (thème, anecdote)</summary>
         <label class="fl">Thème affiché à l'écran<input id="c" list="catl" value="${esc(x.c||'')}" maxlength="40" placeholder="${esc(z.name)}"><datalist id="catl">${cats.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
         <label class="fl">Anecdote, lue après la réponse (facultatif)<textarea id="info" rows="2" maxlength="400">${esc(x.info||'')}</textarea></label>
@@ -1051,6 +1187,9 @@ function editQuestion(z, idx){
   app.querySelectorAll("#mode button").forEach(b => b.onclick = () => { mode=b.dataset.m; app.querySelectorAll("#mode button").forEach(y=>y.classList.toggle("on",y===b)); $("#qcm").hidden = mode!=="qcm"; $("#tf").hidden = mode!=="tf"; });
   app.querySelectorAll("#tfv button").forEach(b => b.onclick = () => { tfVal=b.dataset.v; app.querySelectorAll("#tfv button").forEach(y=>y.classList.toggle("on",y===b)); });
   const err = m => { $("#err").textContent = m; return false; };
+  $("#yt").oninput = () => { const v=$("#yt").value.trim(), y=ytParse(v); $("#ytf").classList.toggle("on", !!y);
+    $("#ytmsg").textContent = !v ? "Joué sur l'écran TV (image floutée) pendant la question ; le lien est envoyé aux téléphones une fois la réponse dévoilée." : y ? "✓ Vidéo reconnue"+(y.s?` · début à ${fmtSecs(y.s)}`:"") : "⚠️ Lien YouTube non reconnu";
+    if(y && y.s && !$("#ys").value.trim()) $("#ys").value = fmtSecs(y.s); };
   const save = () => {
     const q = $("#q").value.trim(); if(!q) return err("Écrivez la question.");
     let a;
@@ -1060,6 +1199,10 @@ function editQuestion(z, idx){
       if(new Set([g,...w].map(normQ)).size !== w.length+1) return err("Deux réponses sont identiques.");
       a = [g, ...w]; }
     const item = {c:$("#c").value.trim() || z.name, q, a}; const info=$("#info").value.trim(); if(info) item.info=info;
+    const ytv = $("#yt").value.trim();
+    if(ytv){ const y = ytParse(ytv); if(!y) return err("Lien YouTube non reconnu (ex. https://youtu.be/… ou https://www.youtube.com/watch?v=…)");
+      const ys = $("#ys").value.trim() ? ytSecs($("#ys").value) : y.s; if(isNaN(ys)) return err("Début de l'extrait : écrivez par ex. 1:05 ou 65.");
+      Object.assign(item, {yt:y.id, ys, yd:+$("#yd").value===10?10:15}); }
     if(idx==null){ if(z.qs.some(y=>qKey(y)===qKey(item))) return err("Cette question est déjà dans le quiz."); z.qs.push(item); } else z.qs[idx]=item;
     QZ.put(z); return true;
   };
@@ -1073,6 +1216,7 @@ function openBulk(z){
   m.innerHTML=`<div class="modal-box">
     <h3>📋 Ajouter en lot</h3>
     <p>Une question par ligne : <code>Catégorie;Question;Bonne réponse;Faux 1;Faux 2;Faux 3</code> (2 à 4 réponses). Idéal pour coller depuis Excel ou Notes.</p>
+    <p>🎵 Blind test : ajoutez en 7e colonne un lien YouTube, et en 8e le début de l'extrait (ex. <code>1:05</code>). Laissez les mauvaises réponses vides si besoin : <code>Blind test;Quel est ce titre ?;Bonne;Faux 1;Faux 2;Faux 3;https://youtu.be/…;0:45</code></p>
     <textarea id="csv" placeholder="Musique;Qui chante « La Bohème » ?;Charles Aznavour;Jacques Brel;Édith Piaf;Serge Gainsbourg"></textarea>
     <div class="modal-row"><span id="msg" class="muted"></span><span style="flex:1"></span><button class="btn ghost" id="cl">Annuler</button><button class="btn" id="sv">Ajouter</button></div></div>`;
   document.body.appendChild(m);
@@ -1080,7 +1224,7 @@ function openBulk(z){
   const check=()=>{ const r=parseCSV(area.value); msg.textContent=`${r.ok.length} question(s) valide(s)`+(r.bad.length?` · lignes ignorées : ${r.bad.slice(0,8).join(", ")}${r.bad.length>8?"…":""}`:""); return r; };
   area.oninput=check; check();
   $("#cl").onclick=()=>m.remove();
-  $("#sv").onclick=()=>{ const r=check(); const have=new Set(z.qs.map(qKey)); let n=0; r.ok.forEach(([c,q,a])=>{ const it={c,q,a}; if(have.has(qKey(it))) return; have.add(qKey(it)); z.qs.push(it); n++; }); QZ.put(z); m.remove(); toast(`${n} question(s) ajoutée(s)`+(r.ok.length-n?` · ${r.ok.length-n} doublon(s) ignoré(s)`:'')); editQuiz(z.id); };
+  $("#sv").onclick=()=>{ const r=check(); const have=new Set(z.qs.map(qKey)); let n=0; r.ok.forEach(([c,q,a,y])=>{ const it=withYt({c,q,a}, y); if(have.has(qKey(it))) return; have.add(qKey(it)); z.qs.push(it); n++; }); QZ.put(z); m.remove(); toast(`${n} question(s) ajoutée(s)`+(r.ok.length-n?` · ${r.ok.length-n} doublon(s) ignoré(s)`:'')); editQuiz(z.id); };
 }
 
 /* ===================== ÉCRAN TV (affichage public, alimenté par la régie) ===================== */
@@ -1092,7 +1236,7 @@ function displayState(){
   return {t:"dstate", code:H.code, url:joinUrl(), phase:H.phase, view:H.view||"", online:H.online, turn:HAS_TURN, info:quizInfo(), src:H.src||"",
     time:H.settings.time, ctl:H.mode==="ecran",
     players:r.map(p=>({pid:p.pid,name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0})),
-    qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, choices:q.choices, correct: showCorrect ? q.correct : -1} : null,
+    qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", ys:q.ys||0, yd:q.yd||15, choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, ytHere:H.mode!=="regie",
     counts, answered:H.answers.size, connected:connectedCount(),
     endsIn: H.phase==="question" ? Math.max(0, H.settings.time*1000-(Date.now()-H.qStart)) : 0,
     season: H.view==="season" ? seasonTable().slice(0,10) : null, seasonName: SEASON.data().nom};
@@ -1170,11 +1314,13 @@ function renderDisplay(T){
     const q=T.q, limit=T.time*1000, endsAt=Date.now()+T.endsIn;
     app.innerHTML = `<div class="tv">${dHead(T)}
       <div class="qtop"><span class="pill">${esc(q.c)}</span><span>Question ${T.qi+1} / ${T.total}</span><span class="answered"><b id="ans">${T.answered}</b> / <span id="tot">${T.connected}</span> réponses</span></div>
-      <h2 class="qtext">${esc(q.q)}</h2>
+      ${q.yt ? `<div class="listen"><div class="ytslot ${T.ytHere?'':'ytart'}" ${T.ytHere?'id="ytslot"':''}>${T.ytHere?'':'<span>♪</span>'}</div><div class="listen-txt"><div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h2>🎵 Écoutez…</h2><p class="qsub">${esc(q.q)}</p></div></div>`
+             : `<h2 class="qtext">${esc(q.q)}</h2>`}
       <div class="timer"><div class="track"><div class="bar" id="bar"></div></div><span class="secs" id="secs">${T.time}</span></div>
       ${dCounts(T,false)}
       ${q.alc?`<p class="evin">${EVIN}</p>`:''}
-      <div class="tvfoot">${credit}${dCtl(T,"Dévoiler ▶","rv")}<span class="credit"></span></div></div>`;
+      <div class="tvfoot">${credit}${dCtl(T,"Dévoiler ▶","rv")}${q.yt && T.ctl && T.ytHere ? '<button class="ctl" id="ytre2" type="button">🔁 Extrait</button>' : '<span class="credit"></span>'}</div></div>`;
+    const yr2=$("#ytre2"); if(yr2) yr2.onclick = () => { ytReplay(); };
     const bar=$("#bar"), secs=$("#secs");
     const tick=()=>{ const left=Math.max(0,endsAt-Date.now()); bar.style.transform=`scaleX(${left/limit})`; const s=Math.ceil(left/1000); secs.textContent=s; secs.classList.toggle("hot",s<=5); if(left>0) DSP.raf=requestAnimationFrame(tick); };
     tick();
@@ -1183,7 +1329,7 @@ function renderDisplay(T){
     const q=T.q, last=T.qi>=T.total-1;
     app.innerHTML = `<div class="tv reveal">${dHead(T)}
       <div class="qtop"><span class="pill">${esc(q.c)}</span><span>Question ${T.qi+1} / ${T.total}</span><span class="answered"><b>${T.answered}</b> réponses</span></div>
-      <h2 class="qtext">${esc(q.q)}</h2>
+      ${q.yt ? `<div class="qrow"><h2 class="qtext">${esc(q.q)}</h2><div class="ytside">${T.ytHere?'<div class="ytslot" id="ytslot"></div>':`<img class="ytslot ytthumb" src="https://i.ytimg.com/vi/${esc(q.yt)}/hqdefault.jpg" alt="">`}<p>📱 Le lien YouTube est sur vos téléphones</p></div></div>` : `<h2 class="qtext">${esc(q.q)}</h2>`}
       ${dCounts(T,true)}
       ${q.info?`<p class="anec tv-anec">💡 ${esc(q.info)}</p>`:''}
       ${q.alc?`<p class="evin">${EVIN}</p>`:''}
@@ -1206,6 +1352,7 @@ function renderDisplay(T){
       <div style="display:flex;justify-content:center">${T.ctl?'<button class="ctl" id="again">Nouvelle partie</button>':''}</div></div>`;
   }
   dBind(T);
+  ytSync(T);
 }
 /* ---- fenêtre « écran TV » ouverte par la régie ---- */
 function displayWindow(){
@@ -1504,6 +1651,7 @@ function renderRegie(){
   A.local = true; A.send = m => adminData(LOCALCONN, m);
   A.st = adminState(); if(A.st.phase==="question") A.endsAt = Date.now()+A.st.endsIn;
   renderRemote();
+  const s = A.st; ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, noBlur:true});
 }
 const LOCALCONN = {admin:true, open:true, send:m => { if(m && m.t==="toast") toast(m.msg); }, on(){} };
 function applySetting(k, v){
@@ -1533,7 +1681,7 @@ function openHostSettings(){
     <h3>⚙️ Réglages de la partie <small class="muted">(visible seulement quand vous ouvrez ce menu)</small></h3>
     <div class="set-grid">
       <div>${settingsHTML(s, quizzes, bank().length)}
-        <div class="modal-row"><button class="btn ghost" id="edit">🛠️ Créer / modifier mes quiz</button></div></div>
+        <div class="modal-row"><button class="btn ghost" id="edit">🛠️ Créer / modifier mes quiz</button><a class="btn ghost " href="guide.html" target="_blank" rel="noopener" data-guide>📖 Mode d'emploi staff</a></div></div>
       <div class="remote-card"><div id="aqr" class="qr sm"></div>
         <div><b>🎛️ Télécommande</b><p>Scannez avec votre téléphone ou tablette pour piloter la partie depuis le micro : lancer, avancer, voir la bonne réponse.</p><p>Code ${H.code} · PIN <b class="pin">${H.pin}</b></p></div></div>
     </div>
@@ -1561,8 +1709,8 @@ function adminState(){
     season:{nom:sd.nom, bareme:sd.bareme, table:seasonTable(sd).slice(0,60).map(x=>({h:x.h,n:x.n,av:x.av,c:x.c,pts:x.pts,rank:x.rank,parties:x.parties})), joueurs:Object.entries(sd.joueurs).map(([h,j])=>({h,n:j.n}))},
     quizzes:QZ.all().map(z=>({id:z.id,name:z.name,n:z.qs.length})),
     players:r.map(p=>({pid:p.pid,hid:p.hid||"",name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0,season:p.season||null})),
-    qi:H.qi, total:H.qs.length, q:(q && H.phase!=="lobby" && H.phase!=="end") ? {c:q.c,q:q.q,info:q.info||"",choices:q.choices,correct:q.correct} : null,
-    answered:H.answers.size, connected:connectedCount(), counts,
+    qi:H.qi, total:H.qs.length, q:(q && H.phase!=="lobby" && H.phase!=="end") ? {c:q.c,q:q.q,info:q.info||"",choices:q.choices,correct:q.correct,yt:q.yt||"",ys:q.ys||0,yd:q.yd||15} : null,
+    answered:H.answers.size, connected:connectedCount(), counts, ytn:H.ytN||0,
     endsIn: H.phase==="question" ? Math.max(0, H.settings.time*1000-(Date.now()-H.qStart)) : 0};
 }
 let adminT=0;
@@ -1581,6 +1729,7 @@ function adminData(conn, d){
     else if(d.c==="advance") advance();
     else if((d.c==="lobby" && H.phase==="end") || (d.c==="stop" && H.phase!=="lobby")){ const m=$(".modal"); if(m) m.remove(); backToLobby(); }
     else if(d.c==="kick") kickPlayer(String(d.pid));
+    else if(d.c==="replay") ytReplay();
   }
   else if(d.t==="pushquiz" && d.quiz){
     const z=cleanQuiz(d.quiz); const id=String(d.quiz.id||"").replace(/[^a-z0-9]/gi,"").slice(0,12);
@@ -1642,8 +1791,8 @@ function renderRemote(){
   const rs = m => (A.send || aSend)(m);
   const st=A.st, top = A.local
     ? `<div class="rg-top"><img class="logo mini" src="logo.png" alt=""><div class="rg-title"><b>Régie animateur</b><span class="muted">Code ${esc(st.code)} · ${st.connected} connecté${st.connected>1?'s':''}</span></div>
-        <div class="rg-actions"><button class="btn sm" data-tv>📺 Ouvrir l'écran TV</button><button class="btn ghost sm" data-rq>🎛️ Télécommande</button><a class="btn ghost sm" href="${location.pathname}?edit=1${QS.get("dev")?"&dev="+encodeURIComponent(QS.get("dev")):""}" target="_blank">🛠️ Mes quiz</a></div></div>`
-    : `<div class="rm-top"><span class="kicker">🎛️ Télécommande</span><span class="muted">Code ${esc(st.code)} · ${st.connected} connecté${st.connected>1?'s':''}</span></div>`;
+        <div class="rg-actions"><button class="btn sm" data-tv>📺 Ouvrir l'écran TV</button><button class="btn ghost sm" data-rq>🎛️ Télécommande</button><a class="btn ghost sm" href="${location.pathname}?edit=1${QS.get("dev")?"&dev="+encodeURIComponent(QS.get("dev")):""}" target="_blank">🛠️ Mes quiz</a><a class="btn ghost sm" href="guide.html" target="_blank" rel="noopener" data-guide>📖 Mode d'emploi</a></div></div>`
+    : `<div class="rm-top"><span class="kicker">🎛️ Télécommande</span><span class="muted">Code ${esc(st.code)} · ${st.connected} connecté${st.connected>1?'s':''}</span><a class="btn ghost sm guide-ic" href="guide.html" target="_blank" rel="noopener" data-guide>📖 <span>Aide</span></a></div>`;
   const bindTop = () => { const tv=app.querySelector("[data-tv]"); if(tv) tv.onclick=openTV; const rq=app.querySelector("[data-rq]"); if(rq) rq.onclick=openRemoteQR; };
   if(st.phase==="lobby"){
     const sig = JSON.stringify(st.quizzes)+st.nb;
@@ -1678,7 +1827,10 @@ function renderRemote(){
       <div class="rans">${q.choices.map((c,i)=>`<div class="ra c${i} ${i===q.correct?'good':''}"><span class="shape">${letters[i]}</span><span class="lbl">${esc(c)}</span>${rev?`<b>${st.counts[i]}</b>`:(i===q.correct?'<b>✓</b>':'')}</div>`).join("")}</div>
       <p class="muted">🎤 Bonne réponse : <b class="gold">${esc(q.choices[q.correct])}</b> · ${st.answered}/${st.connected} réponses</p>
       ${q.info?`<p class="anec">💡 ${esc(q.info)}</p>`:''}
+      ${q.yt && A.local ? `<div class="rg-yt"><div class="ytslot" id="ytslot"></div><small>🔊 Le son de l'extrait sort de cet ordinateur (régie)</small></div>` : ''}
+      ${q.yt?`<div class="rmyt">🎵 Blind test · extrait de ${q.yd||15} s à partir de ${fmtSecs(q.ys||0)}, joué ${A.local ? "ici" : st.local ? "sur l'ordinateur de la régie" : "par l'écran"} · <a href="${ytUrl(q.yt,q.ys||0)}" target="_blank" rel="noopener">voir sur YouTube</a>${rev?'':' <button class="btn ghost sm" id="ytre" type="button">🔁 Rejouer l\'extrait</button>'}</div>`:''}
       <div class="rbar"><button class="btn big" id="nx">${rev ? (last?'Résultats finaux 🏆':'Classement ▶') : 'Dévoiler la réponse ▶'}</button><button class="btn ghost sm" id="stop">⏹ Arrêter</button></div></div>`;
+    const yre=$("#ytre"); if(yre) yre.onclick = () => rs({t:"cmd", c:"replay"});
     if(!rev){ const el=$("#rt"); const tick=()=>{ const left=Math.max(0,A.endsAt-Date.now()); if(el) el.textContent=Math.ceil(left/1000)+" s"; if(left>0) A.raf=requestAnimationFrame(tick); }; tick(); }
   }
   else if(st.phase==="leaderboard"){
@@ -1941,7 +2093,7 @@ function renderPlayer(){
       app.innerHTML = `<div class="ph">${topBar(`<span class="ptime" id="pt"></span>`)}<div class="ph-center"><div class="pch c${s.answered}" style="width:100%;justify-content:center"><span class="shape">${SHAPES[s.answered]}</span>${esc(s.choices[s.answered])}</div><h2>Réponse envoyée</h2><p>Suspense… on attend les autres.</p></div></div>`;
     } else {
       app.innerHTML = `<div class="ph">${topBar(`<span class="ptime" id="pt"></span>`)}
-        <div class="pq"><span class="kicker">${esc(s.cat)} · ${s.qi+1}/${s.total}</span><br>${s.text?esc(s.text):'<span class="lookq">👀 Lis la question sur l\'écran</span>'}${s.alc?`<small class="evin">${EVIN}</small>`:''}</div>
+        <div class="pq"><span class="kicker">${esc(s.cat)} · ${s.qi+1}/${s.total}</span><br>${s.text?esc(s.text):s.blind?'<span class="lookq">🎵 Écoute l\'extrait…</span>':'<span class="lookq">👀 Lis la question sur l\'écran</span>'}${s.alc?`<small class="evin">${EVIN}</small>`:''}</div>
         <div class="pchoices" style="grid-template-rows:repeat(${s.choices.length},1fr)">${s.choices.map((c,i)=>`<button class="pch c${i}" data-i="${i}"><span class="shape">${SHAPES[i]}</span>${esc(c)}</button>`).join("")}</div></div>`;
       app.querySelectorAll(".pch").forEach(b => b.onclick = () => {
         const i=+b.dataset.i; app.querySelectorAll(".pch").forEach(x=>x.disabled=true); b.style.outline="4px solid #fff";
@@ -1959,6 +2111,7 @@ function renderPlayer(){
         <h2>${none?'⏰ Trop tard !':ok?'✓ Bonne réponse !':'✗ Raté !'}</h2>
         ${ok?`<div class="gain">+${s.gain} pts${s.streak>1?` · série ×${s.streak} 🔥`:''}</div>`:`<div class="corr">Réponse : <b>${esc(s.correctText)}</b></div>`}
       </div>
+      ${s.ytLink?`<a class="btn ytlink" href="${esc(s.ytLink)}" target="_blank" rel="noopener">▶ Écouter sur YouTube</a>`:''}
       <div class="stat"><div><b>${s.rank}<sup>${s.rank===1?'er':'e'}</sup></b><span>sur ${s.players}</span></div><div><b>${s.score}</b><span>points</span></div></div>
       <p>${s.phase==="leaderboard"?'Le classement est à l\'écran 👀':'Prochaine question bientôt…'}</p>
     </div></div>`;

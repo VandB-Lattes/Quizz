@@ -60,6 +60,13 @@ Chaque joueur a un **code joueur** (page « Classement de la saison ») pour ret
 - **Jeton GitHub** : le créer avec **Expiration : No expiration**. Sinon, saisir sa date d'expiration : l'appli prévient 30 jours avant ; un jeton expiré est signalé et rien n'est perdu.
 - **Classement de la saison** : en partie, lu en direct depuis l'animateur ; hors partie, lu directement dans le dépôt GitHub (plus d'attente de GitHub Pages).
 
+## Mode d'emploi staff
+`guide.html` : bouton **📖 Mode d'emploi staff** sur l'accueil, dans la régie, la télécommande, l'éditeur et les réglages ⚙️. Check-list avant soirée, déroulé, saison, loi Évin, dépannage ; imprimable.
+
+## Blind test (extraits YouTube)
+Dans l'éditeur, champ **🎵 Extrait YouTube** (+ début, durée 10 ou 15 s) ; en Excel : 7e colonne = lien, 8e = début.
+La TV affiche « 🎵 Écoutez… » ; l'extrait est joué par la régie (son de l'ordinateur de l'animateur ; en écran unique, par la tablette) ; le lien YouTube n'est envoyé aux téléphones qu'à la réponse. Rien n'est hébergé sur le site.
+
 ## Tester sans public
 `simulateur.html` → **Démo complète** (écran TV + télécommande PIN 0000 + téléphones virtuels, sans internet)
 ou **Rejoindre une vraie partie**.
