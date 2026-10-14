@@ -432,7 +432,7 @@ h2.qtext{font-weight:800;letter-spacing:0}
 .ytbox{position:fixed;z-index:5;border-radius:18px;overflow:hidden;background:#000;transition:filter .4s}
 .ytbox.hidden{display:block!important;visibility:hidden;pointer-events:none;left:-9999px!important;top:0!important;width:320px!important;height:180px!important}
 .ytframe.standby{opacity:0}
-.ytframe,.ytframe iframe,#ytp,#ytp2{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
+.ytframe,.ytframe iframe,#ytp,#ytp2{position:absolute;inset:0;width:1px;height:1px;opacity:0;border:0;pointer-events:none}
 .ytbox.blind .ytframe{filter:blur(26px) saturate(1.4) brightness(.75);transform:scale(1.25)}
 .ytbox.blind::after{content:"♪";position:absolute;inset:0;display:grid;place-items:center;font-size:min(9vw,16vh);color:rgba(251,234,211,.85);text-shadow:0 4px 30px #000}
 .yt-go{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--gold);color:var(--ink);font-weight:800;border-radius:12px;padding:.8em 1.4em;font-size:max(16px,1.4vw);box-shadow:0 6px 30px #000a;cursor:pointer}
@@ -1078,7 +1078,7 @@ function ytPre(T, here){ if(here && T && T.nx && T.nx.yt && (T.phase!=="question
 const ytVars = c => ({start:c.s, end:c.e, autoplay:1, controls:0, disablekb:1, fs:0, iv_load_policy:3, modestbranding:1, playsinline:1, rel:0});
 function ytNew(host, c, muted){
   const v = ytVars(c); if(muted) v.mute = 1;
-  return new YT.Player(host, {width:"100%", height:"100%", videoId:c.id, playerVars:v,
+  return new YT.Player(host, {width:"1", height:"1", videoId:c.id, playerVars:v,
     events:{ onReady: e => ytReady(e.target), onStateChange: e => ytState(e.target, e.data), onError: e => ytErr(e.target) }});
 }
 function ytReady(pl){
