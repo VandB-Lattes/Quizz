@@ -1,42 +1,43 @@
 # VandB Quizz — soirée quiz au bar
 
-Écran TV / vidéoprojecteur = questions, chrono, classement, voix.
-Téléphones = les joueurs répondent en scannant le QR code. Aucune appli, aucun compte.
+Écran TV / vidéoprojecteur = questions, chrono, classement (plein écran automatique).
+Téléphones = les joueurs répondent en scannant le QR code, après avoir accepté les conditions.
+Télécommande = l'animateur pilote la partie depuis son téléphone ou sa tablette, au micro.
 
-## Fichiers à mettre sur GitHub (dans le même dossier)
-- `index.html` — l'appli
-- `logo.jpg` — le logo
-- `qrcode.min.js` — générateur de QR code (licence MIT, `qrcode-LICENSE.txt`)
+## Fichiers (tous dans le même dossier sur GitHub)
+| Fichier | Rôle |
+| --- | --- |
+| `index.html` | Le jeu (écran TV, joueurs, télécommande, éditeur de quiz) |
+| `config.js` | **À compléter** : organisateur (conditions), relais TURN |
+| `conditions.html` | Conditions d'utilisation acceptées par les joueurs |
+| `test.html` | Test de connexion de l'appareil |
+| `simulateur.html` | Téléphones virtuels (démo hors ligne ou vraie partie) |
+| `mock-reseau.js` | Réseau simulé utilisé par la démo |
+| `modele-questions.csv` | Modèle Excel pour importer des questions |
+| `logo.png`, `qrcode.min.js`, `qrcode-LICENSE.txt` | Logo et générateur de QR code |
 
-## Mise en ligne depuis un téléphone
-1. Enregistrer les 3 fichiers sur le téléphone (Fichiers / Téléchargements).
-2. Dans le navigateur (pas l'appli GitHub), aller sur github.com et créer un compte.
-3. Menu du navigateur → **Version pour ordinateur**.
-4. **+** (en haut) → **New repository** → nom `quiz-bar` → **Public** → **Create repository**.
-5. Lien **uploading an existing file** → **choose your files** → sélectionner les 3 fichiers → **Commit changes**.
-6. **Settings** → **Pages** → Branch : `main` / `(root)` → **Save**.
-7. Attendre 1–2 min, recharger : l'adresse s'affiche (`https://VOTRE-PSEUDO.github.io/quiz-bar/`).
-
-## Relais TURN (recommandé, gratuit, 10 min)
-Sans relais, certains téléphones en 4G ou sur un Wi-Fi « isolé » ne pourront pas se connecter.
-1. Créer un compte gratuit sur metered.ca → section **TURN Server** (offre gratuite).
-2. Copier l'URL « credentials » qui contient `apiKey=…`.
-3. Sur GitHub, ouvrir `index.html` → crayon ✏️ → tout en haut, coller l'URL entre les guillemets de `TURN_API_URL: ""` → **Commit changes**.
-4. Sur l'écran TV, le badge doit afficher « relais ✓ ».
+## Mise en ligne
+1. github.com → **New repository** `quiz-bar` (Public).
+2. **Add file → Upload files** → déposer tous les fichiers → **Commit changes**.
+3. **Settings → Pages** → Branch `main` / `(root)` → **Save**. Adresse : `https://VOTRE-PSEUDO.github.io/quiz-bar/`.
+4. Ouvrir `config.js` → crayon ✏️ → remplir `ORGANISATEUR` (nom, adresse, contact) et, si possible, `TURN_API_URL` → **Commit**.
+5. Ouvrir `…/quiz-bar/test.html` sur l'ordinateur TV puis sur un téléphone (Wi-Fi et 4G).
 
 ## Pendant la soirée
-- Ordinateur relié à la TV : ouvrir l'adresse → **Lancer l'écran TV** → **Plein écran**. Désactiver la mise en veille.
-- **Espace / Entrée** fait avancer. Cliquer sur un pseudo pour exclure un joueur.
-- Si l'onglet TV se ferme ou se recharge : rouvrir l'adresse → **Reprendre la partie**. Les téléphones se reconnectent seuls, scores conservés.
-- Option **Question seulement sur la TV** (anti-triche, activée par défaut).
-- **Voix** : choisir la voix française et cliquer **Tester**. Chrome ou Edge donnent les meilleures voix.
+- Écran TV : ouvrir l'adresse → **Lancer l'écran TV** (passe en plein écran tout seul ; double-clic pour y revenir).
+- Le public ne voit que le QR code, les joueurs et le jeu. Les réglages sont derrière **⚙️** (en haut à droite, ou touche R).
+- Télécommande : dans ⚙️, scanner le QR code « Télécommande » (ou Accueil → Télécommande animateur + PIN).
+  Elle affiche la bonne réponse à annoncer au micro, et permet de régler, lancer, dévoiler, avancer, arrêter, exclure, envoyer un quiz à l'écran.
+- Onglet TV fermé ou rechargé : rouvrir l'adresse → **Reprendre la partie**.
 
-## Créer ses propres quiz
-Accueil → **🛠️ Créer / modifier mes quiz** (aussi depuis l'écran TV). Fonctionne sur téléphone, tablette et ordinateur.
-Questions de 2 à 4 réponses (vrai/faux possible), ajout en lot depuis Excel, export/import pour passer d'un appareil à l'autre.
-Voir le **Mode d'emploi admin** pour le détail.
+## Questions
+- 213 questions intégrées, 9 catégories, consultables par onglets : Accueil → Créer / modifier mes quiz → **Banque de questions**.
+- Import : télécharger `modele-questions.csv`, le remplir dans Excel (une question par ligne :
+  `Catégorie;Question;Bonne réponse;Faux 1;Faux 2;Faux 3`, 2 à 4 réponses), enregistrer en **CSV (séparateur point-virgule)**,
+  puis Mes quiz → **Importer un fichier**. Les doublons sont ignorés automatiquement.
+- OpenQuizzDB (openquizzdb.org/listing, licence CC BY-SA 4.0) : télécharger les quiz au format **JSON**, puis Mes quiz → **Importer un fichier**
+  (plusieurs fichiers d'un coup possible). Anecdotes reprises, source affichée à l'écran automatiquement.
 
-## Limites restantes
-- Le serveur gratuit PeerJS (mise en relation) n'a pas de garantie ; un serveur perso peut être indiqué dans `PEER_SERVER`.
-- Jusqu'à ~40 joueurs conseillé.
-- Faire un essai avec 2–3 téléphones (Wi-Fi du bar + 4G) avant la première soirée.
+## Tester sans public
+`simulateur.html` → **Démo complète** : écran TV + télécommande (PIN 0000) + téléphones virtuels, sans internet.
+Onglet **Rejoindre une vraie partie** : des téléphones virtuels rejoignent une partie lancée sur l'écran TV.
