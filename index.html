@@ -12,6 +12,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="VandB Quizz">
 <title>VandB Quizz</title>
+<link rel="preconnect" href="https://www.youtube.com">
+<link rel="preconnect" href="https://i.ytimg.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@700;800&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -428,7 +430,9 @@ h2.qtext{font-weight:800;letter-spacing:0}
 .rg-yt .ytslot{width:min(100%,520px)}
 .rg-yt small{color:var(--muted)}
 .ytbox{position:fixed;z-index:5;border-radius:18px;overflow:hidden;background:#000;transition:filter .4s}
-.ytframe,.ytframe iframe,#ytp{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
+.ytbox.hidden{display:block!important;visibility:hidden;pointer-events:none;left:-9999px!important;top:0!important;width:320px!important;height:180px!important}
+.ytframe.standby{opacity:0}
+.ytframe,.ytframe iframe,#ytp,#ytp2{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
 .ytbox.blind .ytframe{filter:blur(26px) saturate(1.4) brightness(.75);transform:scale(1.25)}
 .ytbox.blind::after{content:"♪";position:absolute;inset:0;display:grid;place-items:center;font-size:min(9vw,16vh);color:rgba(251,234,211,.85);text-shadow:0 4px 30px #000}
 .yt-go{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--gold);color:var(--ink);font-weight:800;border-radius:12px;padding:.8em 1.4em;font-size:max(16px,1.4vw);box-shadow:0 6px 30px #000a;cursor:pointer}
@@ -1024,8 +1028,12 @@ function ytClean(x){ const id = String((x&&x.yt)||""); if(!/^[A-Za-z0-9_-]{11}$/
   if(/^[A-Za-z0-9_-]{11}$/.test(String(x.yt2||"")) && x.yt2!==id) o.yt2 = x.yt2; return o; }
 const withYt = (item, x) => { const y = ytClean(x); return y ? Object.assign(item, y) : item; };
 
-/* ---- lecteur sur l'écran TV ---- */
-const YTP = {p:null, api:null, key:"", box:null, cur:null, wt:0};
+/* ---- lecteur sur l'écran TV ----
+   Deux lecteurs : celui qui joue l'extrait, et un second, caché et muet, qui précharge l'extrait de la question
+   suivante pendant le dévoilement / le classement. Au lancement de la question on bascule de l'un à l'autre :
+   l'extrait démarre presque instantanément. */
+const YTP = {p:null, pre:null, fp:null, fpre:null, api:null, key:"", box:null, cur:null, wt:0, preKey:"", started:false};
+const nxYt = () => { const n = typeof H!=="undefined" && H.qs ? H.qs[H.qi+1] : null; return n && n.yt ? {yt:n.yt, yt2:n.yt2||"", ys:n.ys||0, yd:n.yd||15} : null; };
 function ytApi(){
   if(window.YT && YT.Player) return Promise.resolve();
   if(YTP.api) return YTP.api;
@@ -1040,10 +1048,10 @@ function ytApi(){
 function ytBox(){
   if(!YTP.box){
     const b = document.createElement("div"); b.id = "ytbox"; b.className = "ytbox hidden";
-    b.innerHTML = `<div class="ytframe"><div id="ytp"></div></div><button class="yt-go hidden" id="ytgo" type="button">▶ Lancer l'extrait</button>`;
+    b.innerHTML = `<div class="ytframe" id="ytfa"><div id="ytp"></div></div><div class="ytframe standby" id="ytfb"><div id="ytp2"></div></div><button class="yt-go hidden" id="ytgo" type="button">▶ Lancer l'extrait</button>`;
     document.body.appendChild(b);
     b.querySelector("#ytgo").onclick = () => { try{ YTP.p.seekTo(YTP.cur.s, true); YTP.p.unMute(); YTP.p.playVideo(); }catch(e){} b.querySelector("#ytgo").classList.add("hidden"); };
-    YTP.box = b;
+    YTP.box = b; YTP.fp = b.querySelector("#ytfa"); YTP.fpre = b.querySelector("#ytfb");
   }
   return YTP.box;
 }
@@ -1056,29 +1064,58 @@ window.addEventListener("resize", () => ytPlace());
 window.addEventListener("scroll", () => ytPlace(), {passive:true});
 function ytStop(){ clearTimeout(YTP.wt); try{ YTP.p && YTP.p.pauseVideo && YTP.p.pauseVideo(); }catch(e){} if(YTP.box) YTP.box.classList.add("hidden"); YTP.key = ""; }
 function ytSync(T){
-  const q = T && T.q, on = q && q.yt && T.ytHere!==false && !(T.view==="season" && T.season) && (T.phase==="question" || T.phase==="reveal");
-  if(!on){ if(YTP.key || (YTP.box && !YTP.box.classList.contains("hidden"))) ytStop(); return; }
+  const here = T && T.ytHere!==false;
+  const q = T && T.q, on = q && q.yt && here && !(T.view==="season" && T.season) && (T.phase==="question" || T.phase==="reveal");
+  if(!on){ if(YTP.key || (YTP.box && !YTP.box.classList.contains("hidden"))) ytStop(); ytPre(T, here); return; }
   const b = ytBox(); b.classList.remove("hidden"); b.classList.toggle("blind", T.phase==="question" && !T.noBlur); b.classList.toggle("clear", T.phase==="reveal");
   ytPlace(); requestAnimationFrame(ytPlace);
   const key = [q.yt, q.ys, T.qi, T.ytn||0].join("|");
-  if(T.phase==="question" && key !== YTP.key){ YTP.key = key; YTP.cur = {id:q.yt, alt:q.yt2||"", s:q.ys||0, e:(q.ys||0)+(q.yd||15), qi:T.qi}; ytPlay(); }
+  if(T.phase==="question" && key !== YTP.key){ YTP.key = key; YTP.cur = {id:q.yt, alt:q.yt2||"", s:q.ys||0, e:(q.ys||0)+(q.yd||15), qi:T.qi, n:T.ytn||0}; ytPlay(); }
+  ytPre(T, here);
+}
+// préchargement de l'extrait suivant (jamais pendant que l'extrait en cours démarre, pour ne pas le ralentir)
+function ytPre(T, here){ if(here && T && T.nx && T.nx.yt && (T.phase!=="question" || YTP.started)) ytPreload(T.nx); }
+const ytVars = c => ({start:c.s, end:c.e, autoplay:1, controls:0, disablekb:1, fs:0, iv_load_policy:3, modestbranding:1, playsinline:1, rel:0});
+function ytNew(host, c, muted){
+  const v = ytVars(c); if(muted) v.mute = 1;
+  return new YT.Player(host, {width:"100%", height:"100%", videoId:c.id, playerVars:v,
+    events:{ onReady: e => ytReady(e.target), onStateChange: e => ytState(e.target, e.data), onError: e => ytErr(e.target) }});
+}
+function ytReady(pl){
+  if(pl === YTP.pre){ try{ pl.mute(); pl.playVideo(); }catch(_){} return; }
+  try{ pl.unMute(); pl.setVolume(100); pl.playVideo(); }catch(_){} ytWatch();
+}
+function ytState(pl, st){
+  if(pl === YTP.pre){ if(st===1 && !YTP.preOk){ YTP.preOk = true; try{ pl.pauseVideo(); }catch(_){} } return; }
+  if(st===1){ YTP.started = true; const g=$("#ytgo"); if(g) g.classList.add("hidden"); ytStarted(); }
+}
+function ytErr(pl){ if(pl === YTP.pre){ YTP.preKey = ""; return; } ytFallback(); }
+async function ytPreload(n){
+  const c = {id:n.yt, s:n.ys||0, e:(n.ys||0)+(n.yd||15)}, k = c.id+"|"+c.s;
+  if(YTP.preKey === k) return;
+  YTP.preKey = k; YTP.preOk = false;
+  try{ await ytApi(); }catch(e){ YTP.preKey = ""; return; }
+  ytBox();
+  if(!YTP.pre) YTP.pre = ytNew(YTP.fpre.firstElementChild, c, true);
+  else { try{ YTP.pre.mute(); YTP.pre.loadVideoById({videoId:c.id, startSeconds:c.s, endSeconds:c.e}); }catch(e){} }
 }
 async function ytPlay(){
   const c = YTP.cur; if(!c) return;
+  YTP.started = false;
   try{ await ytApi(); }catch(e){ toast("🎵 Extrait YouTube indisponible : vérifiez la connexion internet"); return; }
-  const go = $("#ytgo");
-  if(!YTP.p){
-    YTP.p = new YT.Player("ytp", {width:"100%", height:"100%", videoId:c.id,
-      playerVars:{start:c.s, end:c.e, autoplay:1, controls:0, disablekb:1, fs:0, iv_load_policy:3, modestbranding:1, playsinline:1, rel:0},
-      events:{
-        onReady: e => { try{ e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); }catch(_){} ytWatch(); },
-        onStateChange: e => { if(e.data===1){ const g=$("#ytgo"); if(g) g.classList.add("hidden"); ytStarted(); } },
-        onError: () => ytFallback()
-      }});
-  } else {
-    try{ YTP.p.loadVideoById({videoId:c.id, startSeconds:c.s, endSeconds:c.e}); YTP.p.unMute(); }catch(e){}
-    ytWatch();
+  ytBox();
+  if(YTP.pre && !c.n && YTP.preKey === c.id+"|"+c.s){
+    // l'extrait est déjà chargé dans le lecteur caché : on bascule
+    const op = YTP.p, of = YTP.fp;
+    YTP.p = YTP.pre; YTP.fp = YTP.fpre; YTP.pre = op; YTP.fpre = of; YTP.preKey = "";
+    YTP.fp.classList.remove("standby"); if(YTP.fpre) YTP.fpre.classList.add("standby");
+    try{ op && op.pauseVideo && op.pauseVideo(); }catch(e){}
+    try{ YTP.p.seekTo(c.s, true); YTP.p.unMute(); YTP.p.setVolume(100); YTP.p.playVideo(); }catch(e){}
+    if(YTP.p.getPlayerState && YTP.p.getPlayerState()===1){ YTP.started = true; ytStarted(); }
+    ytWatch(); return;
   }
+  if(!YTP.p) YTP.p = ytNew(YTP.fp.firstElementChild, c, false);
+  else { try{ YTP.p.loadVideoById({videoId:c.id, startSeconds:c.s, endSeconds:c.e}); YTP.p.unMute(); }catch(e){} ytWatch(); }
 }
 function ytFallback(){
   const c = YTP.cur;
@@ -1094,6 +1131,8 @@ function ytWatch(){
   YTP.wt = setTimeout(() => { try{ const st = YTP.p.getPlayerState(); if(st!==1 && st!==0 && st!==3){ YTP.p.unMute(); YTP.p.playVideo(); } }catch(e){}
     YTP.wt = setTimeout(() => { try{ const st = YTP.p.getPlayerState(); if(st!==1 && st!==0 && st!==3 && $("#ytgo")) $("#ytgo").classList.remove("hidden"); }catch(e){} }, 3000); }, 2500);
 }
+// le lecteur YouTube est chargé dès l'ouverture de l'écran de jeu (pas sur les téléphones des joueurs)
+setTimeout(() => { if(!/[?&]room=/.test(location.search)) ytApi().catch(()=>{}); }, 1500);
 function ytReplay(){ if(typeof H!=="undefined" && H.phase==="question"){ H.ytN = (H.ytN||0)+1; pushDisplay(); sendAdmins(); } }
 
 /* ===================== MES QUIZ (éditeur admin) ===================== */
@@ -1405,7 +1444,7 @@ function displayState(){
   return {t:"dstate", code:H.code, url:joinUrl(), phase:H.phase, view:H.view||"", online:H.online, turn:HAS_TURN, info:quizInfo(), src:H.src||"",
     time:H.settings.time, ctl:H.mode==="ecran",
     players:r.map(p=>({pid:p.pid,name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0})),
-    qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", yt2:q.yt2||"", ys:q.ys||0, yd:q.yd||15, choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, ytHere:H.mode!=="regie",
+    qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", yt2:q.yt2||"", ys:q.ys||0, yd:q.yd||15, choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, nx:nxYt(), ytHere:H.mode!=="regie",
     counts, answered:H.answers.size, connected:connectedCount(),
     endsIn: H.phase==="question" ? leftMs() : 0, wait: H.phase==="question" && H.ytWait, board: boardDue(),
     roast: H.phase==="reveal" && q && q.roast ? q.roast : null, prizes: hasPrizes() ? prizesOf() : null,
@@ -1840,7 +1879,7 @@ function renderRegie(){
   A.local = true; A.send = m => adminData(LOCALCONN, m);
   A.st = adminState(); if(A.st.phase==="question") A.endsAt = Date.now()+A.st.endsIn;
   renderRemote();
-  const s = A.st; ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, noBlur:true});
+  const s = A.st; ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, nx:s.nx, noBlur:true});
 }
 const LOCALCONN = {admin:true, open:true, send:m => { if(m && m.t==="toast") toast(m.msg); }, on(){} };
 function applySetting(k, v){
@@ -1901,7 +1940,7 @@ function adminState(){
     quizzes:QZ.all().map(z=>({id:z.id,name:z.name,n:z.qs.length})),
     players:r.map(p=>{ const a=H.answers.get(p.pid); return {pid:p.pid,hid:p.hid||"",name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0,season:p.season||null,ans:a?[Math.round(a.t/100),a.choice]:null}; }),
     qi:H.qi, total:H.qs.length, q:(q && H.phase!=="lobby" && H.phase!=="end") ? {c:q.c,q:q.q,info:q.info||"",choices:q.choices,correct:q.correct,yt:q.yt||"",yt2:q.yt2||"",ys:q.ys||0,yd:q.yd||15} : null,
-    answered:H.answers.size, connected:connectedCount(), counts, ytn:H.ytN||0,
+    answered:H.answers.size, connected:connectedCount(), counts, ytn:H.ytN||0, nx:nxYt(),
     endsIn: H.phase==="question" ? leftMs() : 0, wait: H.phase==="question" && H.ytWait, board: boardDue(),
     roast: (H.phase==="reveal"||H.phase==="leaderboard") && q && q.roast ? q.roast : null,
     hist: H.phase==="end" ? H.qs.map(x=>x.res||{}) : null};
