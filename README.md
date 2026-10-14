@@ -31,10 +31,10 @@ Sans relais, certains téléphones en 4G ou sur un Wi-Fi « isolé » ne pourron
 - Option **Question seulement sur la TV** (anti-triche, activée par défaut).
 - **Voix** : choisir la voix française et cliquer **Tester**. Chrome ou Edge donnent les meilleures voix.
 
-## Questions perso
-Bouton **✏️ Questions perso** sur l'écran TV : une ligne par question,
-`Catégorie;Question;Bonne réponse;Faux 1;Faux 2;Faux 3` (ou fichier .csv point-virgule depuis Excel).
-Elles restent sur l'ordinateur TV, jamais publiées. Les 82 questions intégrées sont encodées dans le site.
+## Créer ses propres quiz
+Accueil → **🛠️ Créer / modifier mes quiz** (aussi depuis l'écran TV). Fonctionne sur téléphone, tablette et ordinateur.
+Questions de 2 à 4 réponses (vrai/faux possible), ajout en lot depuis Excel, export/import pour passer d'un appareil à l'autre.
+Voir le **Mode d'emploi admin** pour le détail.
 
 ## Limites restantes
 - Le serveur gratuit PeerJS (mise en relation) n'a pas de garantie ; un serveur perso peut être indiqué dans `PEER_SERVER`.

@@ -156,6 +156,40 @@ input,select{font:inherit}
 .modal-box code{background:#0006;padding:2px 6px;border-radius:6px;color:var(--text)}
 .modal-box textarea{flex:1;min-height:260px;background:#0b1116;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:13px/1.5 ui-monospace,monospace;resize:vertical}
 .modal-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ed{max-width:760px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px}
+.ed-top{display:flex;justify-content:space-between;align-items:center}
+.ed h2{font-size:1.7rem}
+.logo.mini{width:110px}
+.btn.sm{padding:8px 14px;font-size:.9rem;text-decoration:none}
+.muted{color:var(--muted);font-size:.92rem}
+.ed-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ed-actions.sticky{position:sticky;bottom:0;padding:10px 0;background:linear-gradient(transparent,var(--bg) 30%)}
+.ed-list{display:flex;flex-direction:column;gap:10px}
+.ed-item{display:flex;justify-content:space-between;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;font-size:1.05rem}
+.ed-item small{display:block;color:var(--muted);font-size:.85rem;margin-top:2px}
+.ed-title{width:100%;background:transparent;border:0;border-bottom:2px dashed var(--line);color:var(--text);font:inherit;padding:4px 0}
+.ed-q{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.ed-qh{display:flex;justify-content:space-between;align-items:center}
+.pill.sm{font-size:.78rem;padding:3px 10px}
+.ed-qt{font-weight:700}
+.ed-ans{display:flex;flex-wrap:wrap;gap:6px}
+.ed-ans span{font-size:.85rem;padding:4px 10px;border-radius:99px;background:#0003;color:var(--muted)}
+.ed-ans span.good{background:var(--ok);color:#fff;font-weight:700}
+.ed-qa{display:flex;gap:6px;flex-wrap:wrap}
+.ed-qa button{padding:6px 12px;border-radius:10px;background:#0003;border:1px solid var(--line);font-size:.85rem}
+.ed-qa button:disabled{opacity:.3}
+.danger{color:#ff8a80!important}
+.ed-form{display:flex;flex-direction:column;gap:12px}
+.ed-form>label{display:flex;flex-direction:column;gap:6px;font-weight:600}
+.ed-form input,.ed-form textarea{background:#0b1116;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:1rem}
+.ed-a{display:flex;align-items:center;gap:10px;border-radius:14px;padding:8px 10px}
+.ed-a input:not([type=radio]){flex:1;min-width:0;border:0}
+.ed-a .ok{display:flex;align-items:center;gap:4px;font-size:.85rem;font-weight:700;color:#fff;white-space:nowrap}
+.ed-a .ok input{width:20px;height:20px;accent-color:#fff}
+.tg{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.tv.lobby{height:auto;min-height:100vh}
+@media (pointer:coarse){ .tools button,.cat{padding:10px 16px} .settings select,.settings input[type=text]{padding:10px 12px} .settings input[type=checkbox]{width:22px;height:22px} }
+@media (max-aspect-ratio:1/1){ .lobby-grid{grid-template-columns:1fr} .joincard .qr img,.joincard .qr canvas{width:min(34vh,50vw)!important} }
 .lookq{font-size:1.3rem;font-weight:700;text-align:center;margin:10px 0;color:var(--gold)}
 </style>
 </head>
@@ -245,18 +279,20 @@ function home(){
     <div class="stack">
       ${canResume?`<button class="btn" id="resume">♻️ Reprendre la partie (code ${esc(sv.code)}, ${sv.players.length} joueurs)</button>`:''}
       <button class="btn ${canResume?'ghost':''}" id="host">📺 ${canResume?'Nouvelle partie':'Lancer l\'écran TV (animateur)'}</button>
+      <button class="btn ghost" id="edq">🛠️ Créer / modifier mes quiz</button>
       <div class="sep">— ou —</div>
       <div class="joinrow"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button class="btn ghost" id="join">Rejoindre</button></div>
     </div>
   </div></div>`;
   $("#host").onclick = () => { store.del(SAVE_KEY); startHost(null); };
+  $("#edq").onclick = editorHome;
   if(canResume) $("#resume").onclick = () => startHost(sv);
   const go = () => { const c=$("#code").value.trim().toUpperCase(); if(c.length===4) location.search="?room="+c; };
   $("#join").onclick = go; $("#code").onkeydown = e => { if(e.key==="Enter") go(); };
 }
 
 /* ===================== HÔTE (ÉCRAN TV) ===================== */
-const DEFAULTS = {n:15, time:20, cats:Object.keys(CATS), auto:false, bar:"V and B", hideQ:true, custom:"mix"};
+const DEFAULTS = {n:15, time:20, cats:Object.keys(CATS), auto:false, bar:"V and B", hideQ:true, quiz:"builtin"};
 const H = {
   peer:null, code:"", players:new Map(), phase:"lobby",
   settings: Object.assign({}, DEFAULTS, store.get("qb_settings", {})),
@@ -264,7 +300,6 @@ const H = {
 };
 const saveSettings = () => store.set("qb_settings", H.settings);
 const joinUrl = () => location.origin + location.pathname + "?room=" + H.code;
-const customQs = () => store.get("qb_custom", []);
 
 function saveGame(){
   store.set(SAVE_KEY, {at:Date.now(), code:H.code, phase:H.phase, qs:H.qs, qi:H.qi,
@@ -314,6 +349,8 @@ async function startHost(resume){
       if(e.code==="Space"||e.key==="Enter"||e.key==="ArrowRight"){ e.preventDefault(); advance(); }
     });
     document.addEventListener("visibilitychange", keepAwake);
+    window.addEventListener("storage", e => { if(e.key==="qb_quizzes" && H.phase==="lobby" && !$(".modal")) renderLobby(); });
+    window.addEventListener("focus", () => { if(H.phase==="lobby" && $("#quiz") && !$(".modal")) renderLobby(); });
     window.addEventListener("beforeunload", e => { if(H.phase!=="lobby"){ saveGame(); e.preventDefault(); e.returnValue=""; } });
   }
 }
@@ -358,7 +395,7 @@ function hostData(conn, d){
   else if(d.t==="answer"){
     const p = H.players.get(conn.pid);
     if(!p || H.phase!=="question" || d.qi!==H.qi || H.answers.has(p.pid)) return;
-    const c = d.choice|0; if(c<0||c>3) return;
+    const c = d.choice|0; if(c<0||c>=H.qs[H.qi].choices.length) return;
     H.answers.set(p.pid, {choice:c, t:Date.now()-H.qStart});
     send(p, playerState(p)); saveGame();
     const el = $("#ans"); if(el) el.textContent = H.answers.size;
@@ -402,16 +439,15 @@ function playerState(p){
 
 /* --- déroulé de partie --- */
 function buildPool(){
-  const s = H.settings, mine = customQs();
-  const builtin = s.custom==="only" ? [] : decodeBank(BANK).filter(q => s.cats.includes(q[0])).map(([k,q,a])=>({c:CATS[k],q,a}));
-  const perso = s.custom==="off" ? [] : mine.map(([c,q,a])=>({c,q,a}));
-  return shuffle(builtin.concat(perso));
+  const s = H.settings, z = s.quiz!=="builtin" ? QZ.get(s.quiz) : null;
+  if(z) return z.shuffle ? shuffle(z.qs) : z.qs.slice();
+  return shuffle(decodeBank(BANK).filter(q => s.cats.includes(q[0])).map(([k,q,a])=>({c:CATS[k],q,a})));
 }
 function startGame(){
   const pool = buildPool();
-  if(!pool.length){ toast("Aucune question : choisis des catégories ou importe tes questions"); return; }
-  H.qs = pool.slice(0, H.settings.n).map(({c,q,a}) => {
-    const order = shuffle([0,1,2,3]);
+  if(!pool.length){ toast("Aucune question : choisis des catégories ou un quiz qui contient des questions"); return; }
+  H.qs = pool.slice(0, H.settings.n || pool.length).map(({c,q,a}) => {
+    const order = shuffle(a.map((_,i)=>i));
     return {c, q, choices:order.map(i=>a[i]), correct:order.indexOf(0)};
   });
   H.players.forEach(p => { p.score=0; p.streak=0; });
@@ -468,7 +504,9 @@ function head(){
 }
 function bindHead(){
   setNet();
-  $("#fs").onclick = () => { const d=document.documentElement; document.fullscreenElement ? document.exitFullscreen() : (d.requestFullscreen&&d.requestFullscreen()); };
+  const d=document.documentElement, rfs=d.requestFullscreen||d.webkitRequestFullscreen, efs=document.exitFullscreen||document.webkitExitFullscreen;
+  if(!rfs) $("#fs").classList.add("hidden");
+  $("#fs").onclick = () => { (document.fullscreenElement||document.webkitFullscreenElement) ? efs.call(document) : rfs.call(d); };
   $("#voice").onclick = e => { Voice.on=!Voice.on; store.set("qb_voice",Voice.on); e.target.classList.toggle("on",Voice.on); e.target.textContent="🔊 Voix "+(Voice.on?"ON":"OFF"); if(!Voice.on) try{speechSynthesis.cancel()}catch(_){} };
 }
 function renderHost(){
@@ -481,9 +519,9 @@ function fillVoices(){
   if(w) w.classList.toggle("hidden", l.length>0);
 }
 function renderLobby(){
-  const s = H.settings, nPerso = customQs().length;
+  const s = H.settings, quizzes = QZ.all(); if(s.quiz!=="builtin" && !QZ.get(s.quiz)) s.quiz="builtin"; const nb = decodeBank(BANK).length;
   const local = location.protocol==="file:" || /^(localhost|127\.)/.test(location.hostname);
-  app.innerHTML = `<div class="tv">${head()}
+  app.innerHTML = `<div class="tv lobby">${head()}
     <div class="lobby-grid">
       <section class="joincard">
         <div class="kicker">Scannez pour jouer</div>
@@ -497,14 +535,15 @@ function renderLobby(){
     </div>
     <section class="settings">
       <label>Bar <input type="text" id="bar" value="${esc(s.bar)}" maxlength="24" size="9"></label>
-      <label>Questions <select id="n">${[5,10,15,20,25,30,40].map(v=>`<option ${v===s.n?'selected':''}>${v}</option>`).join("")}</select></label>
+      <label>Quiz <select id="quiz"><option value="builtin">Culture G (${nb} questions)</option>${quizzes.map(z=>`<option value="${z.id}" ${s.quiz===z.id?'selected':''}>${esc(z.name)} (${z.qs.length})</option>`).join("")}</select></label>
+      <button class="cat" id="edit" style="border-color:var(--gold);color:var(--gold)">🛠️ Créer / modifier</button>
+      <label>Questions <select id="n">${[5,10,15,20,25,30,40].map(v=>`<option ${v===s.n?'selected':''}>${v}</option>`).join("")}<option value="0" ${s.n===0?'selected':''}>Toutes</option></select></label>
       <label>Temps <select id="time">${[10,15,20,30,45].map(v=>`<option value="${v}" ${v===s.time?'selected':''}>${v} s</option>`).join("")}</select></label>
       <label><input type="checkbox" id="auto" ${s.auto?'checked':''}> Auto</label>
       <label title="Anti-triche : la question n'apparaît que sur la TV"><input type="checkbox" id="hideQ" ${s.hideQ?'checked':''}> Question seulement sur la TV</label>
       <label>Voix <select id="vsel"></select><button class="cat" id="vtest">Tester</button><span id="vwarn" class="warn hidden">Aucune voix FR</span></label>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%">${Object.entries(CATS).map(([k,v])=>`<button class="cat ${s.cats.includes(k)?'on':''}" data-k="${k}">${v}</button>`).join("")}
-        <button class="cat" id="perso" style="border-color:var(--gold);color:var(--gold)">✏️ Questions perso (${nPerso})</button>
-        ${nPerso?`<select id="cmode" class="cat"><option value="mix" ${s.custom==="mix"?'selected':''}>Mélanger</option><option value="only" ${s.custom==="only"?'selected':''}>Seulement perso</option><option value="off" ${s.custom==="off"?'selected':''}>Sans perso</option></select>`:''}
+      <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%"><span id="cats" style="display:${s.quiz==="builtin"?'contents':'none'}">${Object.entries(CATS).map(([k,v])=>`<button class="cat ${s.cats.includes(k)?'on':''}" data-k="${k}">${v}</button>`).join("")}
+</span><span style="display:${s.quiz==="builtin"?'none':'inline'}" class="muted">${s.quiz!=="builtin"?esc((QZ.get(s.quiz)||{}).name||""):''}</span>
         <button class="btn" id="start">Lancer ▶</button></div>
     </section></div>`;
   $("#qrslot").appendChild(H.qrNode);
@@ -516,8 +555,8 @@ function renderLobby(){
   $("#hideQ").onchange = e => { s.hideQ=e.target.checked; saveSettings(); };
   $("#vsel").onchange = e => { Voice.name=e.target.value; store.set("qb_voice_name",Voice.name); };
   $("#vtest").onclick = () => { const o=Voice.on; Voice.on=true; Voice.say("Bienvenue au quiz VandB ! Bonne chance à tous."); Voice.on=o; };
-  $("#perso").onclick = openCustom;
-  if($("#cmode")) $("#cmode").onchange = e => { s.custom=e.target.value; saveSettings(); };
+  $("#quiz").onchange = e => { s.quiz=e.target.value; saveSettings(); renderLobby(); };
+  $("#edit").onclick = () => window.open(location.pathname+"?edit=1", "_blank");
   app.querySelectorAll(".cat[data-k]").forEach(b => b.onclick = () => {
     const k=b.dataset.k, i=s.cats.indexOf(k);
     if(i>=0){ s.cats.splice(i,1); b.classList.remove("on"); } else { s.cats.push(k); b.classList.add("on"); }
@@ -538,32 +577,148 @@ function renderLobbyPlayers(){
   const st=$("#start"); if(st) st.disabled = ps.length===0;
 }
 
-/* --- questions perso (restent sur l'ordi TV, jamais publiées) --- */
-function toCSV(list){ return list.map(([c,q,a])=>[c,q,...a].map(x=>String(x).replace(/[;\n]/g,",")).join(";")).join("\n"); }
 function parseCSV(txt){
   const ok=[], bad=[];
   txt.split(/\r?\n/).forEach((line,i)=>{
     if(!line.trim() || /^cat[ée]gorie\s*[;\t]/i.test(line)) return;
     const f=line.split(line.includes("\t")&&!line.includes(";")?"\t":";").map(x=>x.trim().replace(/^"|"$/g,""));
-    if(f.length>=6 && f.slice(1,6).every(Boolean)) ok.push([f[0]||"Perso", f[1], f.slice(2,6)]); else bad.push(i+1);
+    const ans=f.slice(2,6).filter(Boolean); if(f.length>=4 && f[1] && f[2] && ans.length>=2) ok.push([f[0]||"Quiz", f[1], ans]); else bad.push(i+1);
   });
   return {ok,bad};
 }
-function openCustom(){
+/* ===================== MES QUIZ (éditeur admin) ===================== */
+const QZ = {
+  all(){
+    let l = store.get("qb_quizzes", null);
+    if(!Array.isArray(l)){ l = []; const old = store.get("qb_custom", []); if(old.length) l.push({id:rid(6), name:"Mes questions", shuffle:true, qs:old.map(([c,q,a])=>({c,q,a}))}); store.set("qb_quizzes", l); }
+    return l;
+  },
+  get(id){ return this.all().find(x=>x.id===id) || null; },
+  put(qz){ const l=this.all(), i=l.findIndex(x=>x.id===qz.id); qz.updated=Date.now(); if(i>=0) l[i]=qz; else l.push(qz); store.set("qb_quizzes", l); },
+  del(id){ store.set("qb_quizzes", this.all().filter(x=>x.id!==id)); }
+};
+function cleanQuiz(o, fallbackName){
+  // accepte un quiz exporté (JSON) et le nettoie
+  const qs = (Array.isArray(o.qs)?o.qs:[]).map(x=>({c:String(x.c||"Quiz").slice(0,40), q:String(x.q||"").slice(0,300), a:(Array.isArray(x.a)?x.a:[]).map(v=>String(v).slice(0,120)).filter(v=>v.trim()).slice(0,4)})).filter(x=>x.q.trim() && x.a.length>=2);
+  return {id:rid(6), name:String(o.name||fallbackName||"Quiz importé").slice(0,60), shuffle:o.shuffle!==false, qs};
+}
+function shareOrDownload(name, text){
+  const blob = new Blob([text], {type:"application/json"});
+  try{ const f = new File([blob], name, {type:"application/json"}); if(navigator.canShare && navigator.canShare({files:[f]})){ navigator.share({files:[f], title:name}).catch(()=>{}); return; } }catch(e){}
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function readFile(f){ return new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>{ const t=String(rd.result); if(/\uFFFD/.test(t)){ const r2=new FileReader(); r2.onload=()=>res(String(r2.result)); r2.readAsText(f,"windows-1252"); } else res(t); }; rd.readAsText(f,"utf-8"); }); }
+function slug(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase() || "quiz"; }
+
+function edShell(title, body, back){
+  app.innerHTML = `<div class="ed">
+    <div class="ed-top">${back?`<button class="btn ghost sm" id="back">← ${back}</button>`:`<a class="btn ghost sm" href="${location.pathname}">← Accueil</a>`}<img class="logo mini" src="logo.jpg" alt=""></div>
+    <h2>${title}</h2>${body}</div>`;
+}
+
+function editorHome(){
+  const l = QZ.all();
+  edShell("🛠️ Mes quiz", `
+    <p class="muted">Créez vos propres quiz. Ils sont enregistrés sur cet appareil. Pour jouer sur l'ordinateur de la TV, utilisez <b>Exporter</b> puis <b>Importer</b> là-bas (ou créez-les directement sur l'ordinateur de la TV).</p>
+    <div class="ed-actions"><button class="btn" id="new">+ Nouveau quiz</button><label class="btn ghost">📥 Importer un fichier<input type="file" id="imp" accept=".json,.csv,.txt,application/json,text/csv,text/plain" hidden></label></div>
+    <div class="ed-list">${l.length ? l.map(z=>`
+      <button class="ed-item" data-id="${z.id}"><span><b>${esc(z.name)}</b><small>${z.qs.length} question${z.qs.length>1?'s':''}${z.shuffle?' · ordre aléatoire':''}</small></span><span>›</span></button>`).join("")
+      : `<p class="muted">Aucun quiz pour l'instant.</p>`}</div>`);
+  $("#new").onclick = () => { const name = prompt("Nom du quiz ?", "Quiz du " + new Date().toLocaleDateString("fr-FR")); if(!name) return; const z={id:rid(6), name:name.trim().slice(0,60)||"Mon quiz", shuffle:false, qs:[]}; QZ.put(z); editQuiz(z.id); };
+  $("#imp").onchange = async e => {
+    const f = e.target.files[0]; if(!f) return;
+    const txt = await readFile(f); let z = null;
+    try{ const o = JSON.parse(txt); z = cleanQuiz(Array.isArray(o)?{qs:o}:o, f.name.replace(/\.\w+$/,"")); }
+    catch(_){ const r = parseCSV(txt); z = {id:rid(6), name:f.name.replace(/\.\w+$/,""), shuffle:true, qs:r.ok.map(([c,q,a])=>({c,q,a}))}; }
+    if(!z.qs.length){ toast("Aucune question valide dans ce fichier"); return; }
+    QZ.put(z); toast(`« ${z.name} » importé : ${z.qs.length} questions`); editQuiz(z.id);
+  };
+  app.querySelectorAll(".ed-item").forEach(b => b.onclick = () => editQuiz(b.dataset.id));
+}
+
+function editQuiz(id){
+  const z = QZ.get(id); if(!z) return editorHome();
+  edShell(`<input class="ed-title" id="nm" value="${esc(z.name)}" maxlength="60" aria-label="Nom du quiz">`, `
+    <div class="ed-actions">
+      <label class="tg"><input type="checkbox" id="shuf" ${z.shuffle?'checked':''}> Questions dans un ordre aléatoire</label>
+    </div>
+    <div class="ed-list" id="ql">${z.qs.map((x,i)=>`
+      <div class="ed-q">
+        <div class="ed-qh"><span class="pill sm">${esc(x.c)}</span><span class="muted">#${i+1}</span></div>
+        <div class="ed-qt">${esc(x.q)}</div>
+        <div class="ed-ans">${x.a.map((v,k)=>`<span class="${k===0?'good':''}">${k===0?'✓ ':''}${esc(v)}</span>`).join("")}</div>
+        <div class="ed-qa"><button data-a="edit" data-i="${i}">✏️ Modifier</button><button data-a="up" data-i="${i}" ${i?'':'disabled'}>↑</button><button data-a="down" data-i="${i}" ${i<z.qs.length-1?'':'disabled'}>↓</button><button data-a="del" data-i="${i}" class="danger">🗑</button></div>
+      </div>`).join("") || `<p class="muted">Pas encore de question. Ajoutez la première !</p>`}</div>
+    <div class="ed-actions sticky">
+      <button class="btn" id="add">+ Ajouter une question</button>
+      <button class="btn ghost" id="bulk">📋 Ajouter en lot</button>
+    </div>
+    <div class="ed-actions">
+      <button class="btn ghost" id="exp">📤 Exporter / partager</button>
+      <button class="btn ghost" id="dup">⧉ Dupliquer</button>
+      <button class="btn ghost danger" id="rm">Supprimer le quiz</button>
+    </div>`, "Mes quiz");
+  $("#back").onclick = editorHome;
+  $("#nm").onchange = e => { z.name = e.target.value.trim().slice(0,60) || "Mon quiz"; QZ.put(z); };
+  $("#shuf").onchange = e => { z.shuffle = e.target.checked; QZ.put(z); };
+  $("#add").onclick = () => editQuestion(z, null);
+  $("#bulk").onclick = () => openBulk(z);
+  $("#exp").onclick = () => shareOrDownload(`quiz-${slug(z.name)}.json`, JSON.stringify({app:"vandb-quizz", v:1, name:z.name, shuffle:z.shuffle, qs:z.qs}, null, 1));
+  $("#dup").onclick = () => { const c = JSON.parse(JSON.stringify(z)); c.id=rid(6); c.name=(z.name+" (copie)").slice(0,60); QZ.put(c); editQuiz(c.id); };
+  $("#rm").onclick = () => { if(confirm(`Supprimer « ${z.name} » et ses ${z.qs.length} questions ?`)){ QZ.del(z.id); editorHome(); } };
+  app.querySelectorAll(".ed-qa button").forEach(b => b.onclick = () => {
+    const i=+b.dataset.i, a=b.dataset.a;
+    if(a==="edit") return editQuestion(z, i);
+    if(a==="del"){ if(!confirm("Supprimer cette question ?")) return; z.qs.splice(i,1); }
+    if(a==="up"&&i>0) [z.qs[i-1],z.qs[i]]=[z.qs[i],z.qs[i-1]];
+    if(a==="down"&&i<z.qs.length-1) [z.qs[i+1],z.qs[i]]=[z.qs[i],z.qs[i+1]];
+    QZ.put(z); editQuiz(z.id);
+  });
+}
+
+function editQuestion(z, idx){
+  const x = idx==null ? {c: (z.qs[z.qs.length-1]||{}).c || "Culture G", q:"", a:["","","",""]} : z.qs[idx];
+  const a = x.a.concat(["","","",""]).slice(0,4);
+  const cats = [...new Set(QZ.all().flatMap(q=>q.qs.map(y=>y.c)).concat(Object.values(CATS)))];
+  edShell(idx==null ? "Nouvelle question" : `Question #${idx+1}`, `
+    <form id="qf" class="ed-form">
+      <label>Catégorie<input id="c" list="catl" value="${esc(x.c)}" maxlength="40" required><datalist id="catl">${cats.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
+      <label>Question<textarea id="q" rows="3" maxlength="300" required placeholder="Ex. : Quel cépage est roi en Bourgogne ?">${esc(x.q)}</textarea></label>
+      <div class="muted">Réponses (2 à 4). Cochez la bonne réponse.</div>
+      ${a.map((v,k)=>`<div class="ed-a c${k}"><span class="shape">${SHAPES[k]}</span><input id="a${k}" value="${esc(v)}" maxlength="120" placeholder="${k<2?'Réponse '+(k+1):'Réponse '+(k+1)+' (facultatif)'}"><label class="ok"><input type="radio" name="ok" value="${k}" ${k===0?'checked':''}> Bonne</label></div>`).join("")}
+      <div class="ed-actions sticky"><button class="btn" type="submit">Enregistrer</button>${idx==null?`<button class="btn ghost" type="button" id="again">Enregistrer + nouvelle</button>`:''}</div>
+      <p class="muted" id="err"></p>
+    </form>`, z.name.slice(0,24));
+  $("#back").onclick = () => editQuiz(z.id);
+  const save = () => {
+    const ok = +app.querySelector('input[name=ok]:checked').value;
+    const vals = [0,1,2,3].map(k=>$("#a"+k).value.trim());
+    if(!vals[ok]){ $("#err").textContent = "La bonne réponse cochée est vide."; return false; }
+    const others = vals.filter((v,k)=>k!==ok && v);
+    if(!others.length){ $("#err").textContent = "Ajoutez au moins une mauvaise réponse."; return false; }
+    const q = {c:$("#c").value.trim()||"Quiz", q:$("#q").value.trim(), a:[vals[ok], ...others]};
+    if(!q.q){ $("#err").textContent = "La question est vide."; return false; }
+    if(idx==null) z.qs.push(q); else z.qs[idx]=q;
+    QZ.put(z); return true;
+  };
+  $("#qf").onsubmit = e => { e.preventDefault(); if(save()) editQuiz(z.id); };
+  if($("#again")) $("#again").onclick = () => { if(save()){ toast("Question ajoutée"); editQuestion(z, null); } };
+  if(idx==null) $("#q").focus();
+}
+
+function openBulk(z){
   const m=document.createElement("div"); m.className="modal";
   m.innerHTML=`<div class="modal-box">
-    <h3>✏️ Questions perso</h3>
-    <p>Une question par ligne : <code>Catégorie;Question;Bonne réponse;Faux 1;Faux 2;Faux 3</code>. Les réponses sont mélangées automatiquement. Ces questions restent enregistrées <b>sur cet ordinateur uniquement</b> (jamais visibles sur le site public). Vous pouvez aussi charger un fichier .csv (export Excel « CSV point-virgule »).</p>
-    <textarea id="csv" placeholder="Musique;Qui chante « La Bohème » ?;Charles Aznavour;Jacques Brel;Édith Piaf;Serge Gainsbourg">${esc(toCSV(customQs()))}</textarea>
-    <div class="modal-row"><input type="file" id="file" accept=".csv,.txt,text/csv,text/plain"><span id="msg" style="color:var(--muted)"></span>
-    <span style="flex:1"></span><button class="btn ghost" id="cl">Annuler</button><button class="btn" id="sv">Enregistrer</button></div></div>`;
+    <h3>📋 Ajouter en lot</h3>
+    <p>Une question par ligne : <code>Catégorie;Question;Bonne réponse;Faux 1;Faux 2;Faux 3</code> (2 à 4 réponses). Idéal pour coller depuis Excel ou Notes.</p>
+    <textarea id="csv" placeholder="Musique;Qui chante « La Bohème » ?;Charles Aznavour;Jacques Brel;Édith Piaf;Serge Gainsbourg"></textarea>
+    <div class="modal-row"><span id="msg" class="muted"></span><span style="flex:1"></span><button class="btn ghost" id="cl">Annuler</button><button class="btn" id="sv">Ajouter</button></div></div>`;
   document.body.appendChild(m);
   const area=$("#csv"), msg=$("#msg");
   const check=()=>{ const r=parseCSV(area.value); msg.textContent=`${r.ok.length} question(s) valide(s)`+(r.bad.length?` · lignes ignorées : ${r.bad.slice(0,8).join(", ")}${r.bad.length>8?"…":""}`:""); return r; };
   area.oninput=check; check();
-  $("#file").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ let t=String(rd.result); if(/Ã©|Ã¨/.test(t)){ rd.onload=()=>{ area.value=String(rd.result); check(); }; rd.readAsText(f,"windows-1252"); return; } area.value=t; check(); }; rd.readAsText(f,"utf-8"); };
   $("#cl").onclick=()=>m.remove();
-  $("#sv").onclick=()=>{ const r=check(); store.set("qb_custom", r.ok); m.remove(); toast(`${r.ok.length} question(s) perso enregistrée(s)`); renderLobby(); };
+  $("#sv").onclick=()=>{ const r=check(); r.ok.forEach(([c,q,a])=>z.qs.push({c,q,a})); QZ.put(z); m.remove(); toast(`${r.ok.length} question(s) ajoutée(s)`); editQuiz(z.id); };
 }
 
 function choicesHTML(q, withCounts){
@@ -583,8 +738,9 @@ function renderQuestion(){
     <h2 class="qtext">${esc(q.q)}</h2>
     <div class="timer"><div class="track"><div class="bar" id="bar"></div></div><span class="secs" id="secs">${H.settings.time}</span></div>
     ${choicesHTML(q,false)}
-    <div class="hint">Espace / Entrée : dévoiler la réponse</div></div>`;
+    <div class="hint"><button class="btn ghost" id="rv">Dévoiler la réponse ▶</button> &nbsp;ou touche Espace</div></div>`;
   bindHead();
+  $("#rv").onclick = advance;
   const limit=H.settings.time*1000, bar=$("#bar"), secs=$("#secs");
   const tick=()=>{ const left=Math.max(0,limit-(Date.now()-H.qStart)); bar.style.transform=`scaleX(${left/limit})`; const s=Math.ceil(left/1000); secs.textContent=s; secs.classList.toggle("hot",s<=5); if(left>0&&H.phase==="question") H.raf=requestAnimationFrame(tick); };
   tick();
@@ -703,7 +859,7 @@ function renderPlayer(){
     } else {
       app.innerHTML = `<div class="ph">${topBar(`<span class="ptime" id="pt"></span>`)}
         <div class="pq"><span class="kicker">${esc(s.cat)} · ${s.qi+1}/${s.total}</span><br>${s.text?esc(s.text):'<span class="lookq">👀 Lis la question sur l\'écran</span>'}</div>
-        <div class="pchoices">${s.choices.map((c,i)=>`<button class="pch c${i}" data-i="${i}"><span class="shape">${SHAPES[i]}</span>${esc(c)}</button>`).join("")}</div></div>`;
+        <div class="pchoices" style="grid-template-rows:repeat(${s.choices.length},1fr)">${s.choices.map((c,i)=>`<button class="pch c${i}" data-i="${i}"><span class="shape">${SHAPES[i]}</span>${esc(c)}</button>`).join("")}</div></div>`;
       app.querySelectorAll(".pch").forEach(b => b.onclick = () => {
         const i=+b.dataset.i; app.querySelectorAll(".pch").forEach(x=>x.disabled=true); b.style.outline="4px solid #fff";
         try{ P.conn.send({t:"answer", qi:s.qi, choice:i}); }catch(e){ toast("Envoi impossible, reconnexion…"); lost(); }
@@ -735,7 +891,7 @@ function renderPlayer(){
 }
 
 /* ===================== DÉMARRAGE ===================== */
-ROOM ? playerJoin() : home();
+ROOM ? playerJoin() : params.get("edit") ? editorHome() : home();
 </script>
 </body>
 </html>
