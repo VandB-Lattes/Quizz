@@ -3,16 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#151e25">
+<meta name="theme-color" content="#1d1714">
 <link rel="icon" href="logo.png">
 <title>Test de connexion · VandB Quizz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@700;800&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>if(!window.Peer)document.write('<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"><\/script>')</script>
 <style>
-:root{--bg:#151e25;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);--text:#fff7ef;--muted:#c9c2bd;--gold:#f7a325;--ok:#2ea862;--ko:#e2463f;--warn:#e8a317}
+:root{--bg:#1d1714;--card:rgba(251,234,211,.07);--line:rgba(251,234,211,.16);--text:#fbf1e4;--muted:#cbb6a2;--gold:#f6c21c;--ok:#2f8a85;--ko:#c4452f;--warn:#e8602c}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 60px}
+body{background:var(--bg);color:var(--text);font:16px/1.5 "Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 60px}
 main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .top{display:flex;align-items:center;gap:14px}
 .logo{width:130px}
@@ -28,10 +29,12 @@ p{color:var(--muted)}
 .row b{display:block}
 .row small{color:var(--muted);display:block}
 .btns{display:flex;flex-wrap:wrap;gap:10px}
-.btn{background:var(--gold);color:#151e25;font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 18px;text-decoration:none;cursor:pointer}
+.btn{background:var(--gold);color:#1d1714;font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 18px;text-decoration:none;cursor:pointer}
 .btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
 .spin{display:inline-block;width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+h1,h2{font-family:"Open Sans",system-ui,sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.01em}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#e8602c 0 25%,#f6c21c 25% 50%,#2f8a85 50% 75%,#fbead3 75%)}
 </style>
 </head>
 <body>
@@ -42,7 +45,8 @@ p{color:var(--muted)}
   <div class="btns"><button class="btn" id="again">Relancer le test</button><a class="btn ghost" href="simulateur.html">📱 Simulateur de joueurs</a><a class="btn ghost" href="./">← Retour au jeu</a></div>
 </main>
 <script>
-const CFG = Object.assign({TURN_API_URL:"", PEER_SERVER:null, ORGANISATEUR:{}}, window.QB_CONFIG||{});
+const CFG = Object.assign({TURN_API_URL:"", PEER_SERVER:null, RELAIS_PUBLIC:true, ORGANISATEUR:{}}, window.QB_CONFIG||{});
+const PUBLIC_TURN = {urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp","turns:openrelay.metered.ca:443"], username:"openrelayproject", credential:"openrelayproject"};
 const list = document.getElementById("list"), sum = document.getElementById("sum");
 const ICON = {ok:"✅", warn:"⚠️", ko:"❌", run:"⏳"};
 const results = [];
@@ -84,17 +88,18 @@ async function run(){
   r("ok","Chargée.");
 
   // 5. Relais TURN
-  r=row("Relais TURN (4G, Wi-Fi isolé)");
-  let ice = STUN.slice(), turn=false;
-  if(!CFG.TURN_API_URL) r("warn","Non configuré. Certains téléphones risquent de ne pas pouvoir se connecter. Voir config.js.");
+  r=row("Relais pour la 4G et les Wi-Fi isolés");
+  let ice = STUN.slice(), turn=false; const relays=[];
+  if(CFG.RELAIS_PUBLIC!==false){ ice.push(PUBLIC_TURN); relays.push(["public", [PUBLIC_TURN]]); }
+  if(CFG.TURN_API_URL){
+    try{ const res = await timeout(fetch(CFG.TURN_API_URL), 8000); const j = await res.json(); if(Array.isArray(j)&&j.length){ ice = ice.concat(j); relays.push(["privé", j]); } }catch(e){}
+  }
+  if(!relays.length) r("warn","Aucun relais activé (RELAIS_PUBLIC est à false dans config.js).");
   else{
-    try{
-      const res = await timeout(fetch(CFG.TURN_API_URL), 8000, "le service ne répond pas");
-      const j = await res.json(); if(!Array.isArray(j) || !j.length) throw new Error("clé invalide ou quota épuisé");
-      ice = ice.concat(j);
-      await timeout(relayLoop(j), 12000, "le relais ne répond pas");
-      turn=true; r("ok","Relais configuré et fonctionnel.");
-    }catch(e){ r("ko","Relais configuré mais en échec : "+e.message+". Vérifiez l'URL dans config.js."); }
+    const okNames=[];
+    for(const [name, servers] of relays){ try{ await timeout(relayLoop(servers), 12000); okNames.push(name); }catch(e){} }
+    if(okNames.length){ turn=true; r("ok", `Relais ${okNames.join(" et ")} fonctionnel, aucun compte nécessaire.`); }
+    else r("warn","Relais injoignable depuis ce réseau en ce moment. La plupart des téléphones se connecteront quand même ; ceux en 4G peuvent échouer.");
   }
 
   // 6. Serveur de mise en relation + connexion directe

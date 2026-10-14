@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#151e25">
+<meta name="theme-color" content="#1d1714">
 <link rel="icon" href="logo.png">
 <title>Simulateur · VandB Quizz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@700;800&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#151e25;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);--text:#fff7ef;--muted:#c9c2bd;--gold:#f7a325;--wine:#e8551f}
+:root{--bg:#1d1714;--card:rgba(251,234,211,.07);--line:rgba(251,234,211,.16);--text:#fbf1e4;--muted:#cbb6a2;--gold:#f6c21c;--wine:#e8602c}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px 16px 40px}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px 16px 40px}
 header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .logo{width:110px}
 h1{font-size:1.4rem;line-height:1.2}
@@ -21,10 +22,10 @@ p,.muted{color:var(--muted)}
 .panel p{width:100%}
 label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted)}
 label.tg{flex-direction:row;align-items:center;gap:8px;font-size:.95rem}
-input,select{font:inherit;background:#0b1116;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+input,select{font:inherit;background:#14100e;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
 input[type=checkbox]{width:20px;height:20px}
 #code{text-transform:uppercase;letter-spacing:.3em;width:120px;text-align:center;font-weight:700}
-.btn{font:inherit;font-weight:700;background:var(--gold);color:#151e25;border:0;border-radius:12px;padding:11px 18px;cursor:pointer;text-decoration:none}
+.btn{font:inherit;font-weight:700;background:var(--gold);color:#1d1714;border:0;border-radius:12px;padding:11px 18px;cursor:pointer;text-decoration:none}
 .btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
 .stage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;margin-bottom:14px}
 .stage.solo{grid-template-columns:1fr}
@@ -38,6 +39,8 @@ input[type=checkbox]{width:20px;height:20px}
 .phone .lbl{position:absolute;left:50%;transform:translateX(-50%);top:-11px;font-size:.72rem;font-weight:700;background:var(--bg);border:1px solid var(--line);padding:0 8px;border-radius:99px;white-space:nowrap}
 .phone .scr{overflow:hidden;border-radius:18px}
 .hidden{display:none!important}
+h1,h2{font-family:"Open Sans",system-ui,sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.01em}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#e8602c 0 25%,#f6c21c 25% 50%,#2f8a85 50% 75%,#fbead3 75%)}
 </style>
 </head>
 <body>
