@@ -572,6 +572,15 @@ body::before{background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 
 .vol{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.vol input{flex:1;min-width:120px}.vol b{min-width:3.2em;text-align:right}
 .staffnote{background:rgba(246,194,28,.16);border:1px solid rgba(246,194,28,.45);border-radius:10px;padding:8px 12px;font-size:.92em}
 .adminid .staffhint{display:block;font-size:.82em;opacity:.8;margin-top:2px}
+.more-menu{width:100%}
+.more-menu>summary{list-style:none;cursor:pointer;width:100%;display:flex;justify-content:center}
+.more-menu>summary::-webkit-details-marker{display:none}
+.more-menu[open]>summary{opacity:.75}
+.more-menu>summary::after{content:' ▾'}.more-menu[open]>summary::after{content:' ▴'}
+.mm-list{display:grid;gap:8px;margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:14px}
+#staffsave:empty{display:none}
+#staffsave{margin-top:10px}
+.ytl-sfx{font-size:.9em;opacity:.9;margin-top:4px}
 .zap{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;
   background:radial-gradient(circle at 50% 40%, #fff6c8 0, #f6c21c 35%, #1d1714 100%);color:#1d1714;animation:zapin .35s both, zapout .45s 2.6s both;pointer-events:none}
 .zap .zbolt{font-size:min(20vh,20vw);line-height:1.15;margin-bottom:2vh;animation:zapflash .5s 3 alternate;filter:drop-shadow(0 0 30px #fff)}
@@ -773,15 +782,20 @@ function home(){
     <div class="stack">
       ${canResume?`<button class="btn" id="resume">♻️ Reprendre la partie (code ${esc(sv.code)}, ${sv.players.length} joueurs)</button>`:''}
       <button class="btn ${canResume?'ghost':''}" id="host">📺 ${canResume?'Nouvelle partie':'Lancer la partie (animateur)'}</button>
-      <button class="btn ghost" id="solo">📱 Mode écran unique (tablette)</button>
-      <button class="btn ghost" id="mgp">📂 Mes parties</button>
-      <button class="btn ghost" id="ssn">🏆 Classement de la saison</button>
       <button class="btn ghost" id="edq">🛠️ Créer / modifier mes quiz</button>
-      <button class="btn ghost" id="rmt">🎛️ Télécommande animateur</button>
+      <button class="btn ghost" id="ssn">🏆 Classement de la saison</button>
+      <details class="more-menu" id="mmenu"><summary class="btn ghost">☰ Plus d'options</summary>
+        <div class="mm-list">
+          <button class="btn ghost" id="solo">📱 Mode écran unique (tablette)</button>
+          <button class="btn ghost" id="mgp">📂 Mes parties</button>
+          <button class="btn ghost" id="rmt">🎛️ Télécommande animateur</button>
+        </div>
+      </details>
       <a class="btn ghost " href="guide.html" target="_blank" rel="noopener" data-guide>📖 Mode d'emploi staff</a>
       <div class="sep">— ou —</div>
       <div class="joinrow"><input id="code" maxlength="4" placeholder="CODE" autocomplete="off"><button class="btn ghost" id="join">Rejoindre</button></div>
     </div>
+    <div id="staffsave"></div>
     ${IS_IOS && !APP_MODE ? '<button class="ios-tip" id="iostip">📲 Installer l\'appli : plein écran sur iPhone et iPad</button>' : ''}
     <p class="legal">${EVIN}<br><a href="conditions.html" target="_blank">Conditions d'utilisation</a></p>
   </div></div>`;
@@ -795,6 +809,7 @@ function home(){
   if(canResume) $("#resume").onclick = () => { if(sv.mode==="ecran") goFS(); else openTV(); startHost(sv); };
   const go = () => { const c=$("#code").value.trim().toUpperCase(); if(c.length===4) location.search="?room="+c; };
   $("#join").onclick = go; $("#code").onkeydown = e => { if(e.key==="Enter") go(); };
+  staffSaveHint();
 }
 
 /* ===================== HÔTE (ÉCRAN TV) ===================== */
@@ -1002,6 +1017,7 @@ function startGame(){
     if(!H.qs.length){ toast("Aucune question disponible : vérifiez la connexion internet"); return; }
     const withAudio = H.qs.filter(q => q.yt);
     if(withAudio.length && !window.__noPrep) return ytPrepare(withAudio).then(() => { if(H.phase==="lobby" && H.qi===-1) nextQuestion(); });
+    if(H.settings.sfx!==false) sfxCheck().then(r => { if(r.bad.length || r.blocked) toast(sfxReport(r)); }).catch(()=>{});
     nextQuestion();
   };
   const withPic = H.qs.filter(q => q.img);
@@ -1286,9 +1302,10 @@ function ytWatch(){
    le lien de secours remplace un lien mort, et les extraits illisibles sont retirés de la partie ---- */
 function ytLoadUI(n){
   const o = document.createElement("div"); o.className = "ytload";
-  o.innerHTML = `<div class="ytl-card"><h2>🎧 Préparation du blind test</h2><p>Chargement et vérification des extraits YouTube…</p><div class="ytl-bar"><i></i></div><p class="ytl-n">0 / ${n}</p><button class="btn ghost sm" type="button" id="ytlskip">Passer et lancer la partie</button></div>`;
+  o.innerHTML = `<div class="ytl-card"><h2>🎧 Préparation du blind test</h2><p>Chargement et vérification des extraits YouTube…</p><div class="ytl-bar"><i></i></div><p class="ytl-n">0 / ${n}</p><p class="ytl-sfx">🔔 Bruitages : vérification…</p><button class="btn ghost sm" type="button" id="ytlskip">Passer et lancer la partie</button></div>`;
   document.body.appendChild(o);
   const api = {upd(d, tot, bad){ o.querySelector(".ytl-bar i").style.width = Math.round(d/tot*100)+"%"; o.querySelector(".ytl-n").textContent = `${d} / ${tot}`+(bad?` · ${bad} indisponible${bad>1?"s":""}`:""); },
+    sfx(t){ o.querySelector(".ytl-sfx").textContent = t; if(typeof H!=="undefined") H.sfxReport = t; },
     close(){ o.remove(); }, onSkip:null};
   o.querySelector("#ytlskip").onclick = () => api.onSkip && api.onSkip();
   return api;
@@ -1310,6 +1327,26 @@ function ytProbe(pl, id, s){
     try{ pl.mute && pl.mute(); pl.loadVideoById({videoId:id, startSeconds:s||0}); }catch(e){ fin("timeout"); }
   });
 }
+/* vérifie que chaque bruitage se charge et peut être joué sur cet appareil */
+const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+const SFX_NAMES = {roulement:"roulement de tambour", acclamations:"acclamations", tictac:"tic-tac", gong:"gong", trombone:"trombone", boing:"boing", eclair:"éclair"};
+function sfxCheck(){
+  const one = k => new Promise(res => {
+    const a = new Audio(); let t = setTimeout(() => fin("timeout"), 10000);
+    const fin = r => { if(!t) return; clearTimeout(t); t = 0; a.oncanplay = a.onloadeddata = a.onerror = null; res([k, r, a]); };
+    a.preload = "auto"; a.oncanplay = a.onloadeddata = () => fin(a.duration > 0 || a.readyState >= 2 ? "ok" : "err"); a.onerror = () => fin("err"); a.src = SFX.files[k]; try{ a.load(); }catch(e){}
+  });
+  return Promise.all(Object.keys(SFX.files).map(one)).then(async rs => {
+    const ok = rs.filter(r => r[1]==="ok"), bad = rs.filter(r => r[1]!=="ok").map(r => SFX_NAMES[r[0]]||r[0]);
+    let blocked = false;
+    // le navigateur autorise-t-il le son ? (test avec un son muet de 0,1 s)
+    if(ok.length){ const a = new Audio(SILENT_WAV); a.muted = true; try{ await a.play(); a.pause(); }catch(e){ if(e && e.name==="NotAllowedError") blocked = true; } }
+    ok.forEach(r => { SFX.a[r[0]] = SFX.a[r[0]] || r[2]; });
+    return {ok:ok.length, total:rs.length, bad, blocked};
+  });
+}
+const sfxReport = r => r.bad.length ? `⚠️ Bruitages : ${r.bad.join(", ")} introuvable${r.bad.length>1?"s":""} (fichier manquant dans sons/)`
+  : r.blocked ? "⚠️ Bruitages chargés, mais le navigateur bloque le son : cliquez une fois dans la page" : `✓ Bruitages : ${r.ok}/${r.total} prêts`;
 async function ytPrepare(list){
   H.preparing = true;
   const ui = ytLoadUI(list.length); let done = 0, bad = 0, skip = false;
@@ -1326,8 +1363,12 @@ async function ytPrepare(list){
       done++; ui.upd(done, list.length, bad);
     }
   };
+  const sfxP = H.settings.sfx===false ? Promise.resolve(null) : sfxCheck().then(r => { ui.sfx(sfxReport(r)); return r; }).catch(() => null);
+  if(H.settings.sfx===false) ui.sfx("🔕 Bruitages coupés dans les réglages");
   const ws = []; for(let i=0; i<Math.min(3, list.length); i++) ws.push(worker());
-  await Promise.race([Promise.all(ws), new Promise(r => { ui.onSkip = () => { skip = true; r(); }; })]);
+  await Promise.race([Promise.all(ws.concat([sfxP])), new Promise(r => { ui.onSkip = () => { skip = true; r(); }; })]);
+  const sr = await Promise.race([sfxP, new Promise(r => setTimeout(() => r(null), 50))]);
+  if(sr && (sr.bad.length || sr.blocked)) setTimeout(() => toast(sfxReport(sr)), 600);
   players.forEach(pl => { try{ pl.destroy && pl.destroy(); }catch(e){} if(pl._box) pl._box.remove(); });
   if(bad){ H.qs = H.qs.filter(q => !q.ytBad); toast(`🎵 ${bad} extrait${bad>1?"s":""} illisible${bad>1?"s":""} retiré${bad>1?"s":""} de la partie`); }
   finish();
@@ -1395,6 +1436,83 @@ function shareOrDownload(name, text){
 function readFile(f){ return new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>{ const t=String(rd.result); if(/\uFFFD/.test(t)){ const r2=new FileReader(); r2.onload=()=>res(String(r2.result)); r2.readAsText(f,"windows-1252"); } else res(t); }; rd.readAsText(f,"utf-8"); }); }
 function slug(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase() || "quiz"; }
 
+/* ===================== AJOUTER DES MUSIQUES (blind test) PAR LIEN YOUTUBE ===================== */
+const MUSIC_Q = [
+  ["🎵 Quel est ce titre ?", "Titre — Artiste", "Ex. : Bohemian Rhapsody — Queen"],
+  ["🎬 De quel film vient cette musique ?", "Film", "Ex. : Titanic"],
+  ["📺 De quelle série ou émission vient ce générique ?", "Série / émission", "Ex. : Friends"],
+  ["🎵 De quel dessin animé vient cette musique ?", "Dessin animé", "Ex. : Le Roi lion"],
+  ["🎮 De quel jeu vidéo vient cette musique ?", "Jeu vidéo", "Ex. : Super Mario Bros."],
+  ["🎤 Qui chante ce titre ?", "Artiste", "Ex. : Céline Dion"]
+];
+/* fausses réponses tirées au hasard : banque de blind test (même type de question) + musiques déjà dans le quiz */
+function musicFakes(qtext, good, z, n, also){
+  const nk = normQ(good), seen = new Set([nk, ...(also||[]).map(normQ)]), pool = [];
+  const add = a => { const k = normQ(a); if(a && !seen.has(k)){ seen.add(k); pool.push(a); } };
+  (z && z.qs || []).forEach(x => { if(x.yt && x.q===qtext) x.a.forEach(add); });
+  if(qtext.startsWith("🎤")) bank().forEach(x => { if(x[0].startsWith("bt") && x[2]==="🎵 Quel est ce titre ?") x[3].forEach(a => { const m = String(a).split(" — ")[1]; if(m) add(m.trim()); }); });
+  else bank().forEach(x => { if(x[0].startsWith("bt") && x[2]===qtext) x[3].forEach(add); });
+  return shuffle(pool).slice(0, n||3);
+}
+/* titre de la vidéo (pour pré-remplir la bonne réponse) */
+async function ytTitle(id){
+  try{
+    const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent("https://www.youtube.com/watch?v="+id)}`);
+    if(!r.ok) return null; const j = await r.json();
+    let t = String(j.title||"").replace(/\s*[\(\[][^\)\]]*(official|officiel|clip|lyric|audio|video|vidéo|hd|4k|remaster|live)[^\)\]]*[\)\]]/ig, "").replace(/\s+/g," ").trim();
+    const a = String(j.author_name||"").replace(/\s*-\s*Topic$/i,"").replace(/VEVO$/i,"").trim();
+    const m = t.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+    return m ? {song:m[2].trim(), artist:m[1].trim()} : {song:t, artist:a};
+  }catch(e){ return null; }
+}
+function addMusic(z, keepType){
+  const qt = keepType != null ? keepType : (store.get("qb_music_qt", 0) | 0);
+  edShell("🎵 Ajouter une musique", `
+    <form id="mf" class="ed-form" autocomplete="off">
+      <div class="ytfield" id="mytf">
+        <label class="fl">🔗 Lien YouTube de la musique<input id="myt" placeholder="Coller le lien : https://youtu.be/…" inputmode="url"></label>
+        <div class="srow"><label class="fl">Début de l'extrait<input id="mys" placeholder="0:30"></label></div>
+        <small class="muted" id="mmsg">Copiez le lien de la vidéo sur YouTube (bouton Partager) et collez-le ici. Astuce : choisissez le moment le plus connu (le refrain), par ex. 0:45.</small>
+      </div>
+      <label class="fl">Question posée<select id="mqt">${MUSIC_Q.map(([q],i)=>`<option value="${i}" ${i===qt?'selected':''}>${esc(q)}</option>`).join("")}</select></label>
+      <label class="fl" id="mgl"><span>✅ Bonne réponse <small class="muted">(<span id="mgh">${esc(MUSIC_Q[qt][1])}</span>)</small></span><input id="mg" maxlength="120" placeholder="${esc(MUSIC_Q[qt][2])}"></label>
+      <div class="fl">❌ Mauvaises réponses <small class="muted">(facultatif : laissées vides, l'appli en choisit dans la banque du blind test)</small>
+        ${[1,2,3].map(i=>`<input id="mw${i}" maxlength="120" placeholder="Automatique">`).join("")}</div>
+      <p class="warn-t" id="merr"></p>
+      <div class="ed-actions sticky"><button class="btn big" type="submit">Ajouter et continuer ➜</button><button class="btn ghost" type="button" id="mdone">Terminer</button></div>
+      <p class="muted">« ${esc(z.name)} » contient ${z.qs.filter(x=>x.yt).length} musique${z.qs.filter(x=>x.yt).length>1?'s':''}. Le son est joué par la régie (ou l'écran casté) ; le lien n'est jamais montré aux joueurs.</p>
+    </form>`, z.name.slice(0,24));
+  $("#back").onclick = () => editQuiz(z.id);
+  const err = m => { $("#merr").textContent = m; return false; };
+  let lastId = "";
+  $("#mqt").onchange = () => { const t = MUSIC_Q[+$("#mqt").value]; $("#mgh").textContent = t[1]; $("#mg").placeholder = t[2]; };
+  $("#myt").oninput = async () => {
+    const v = $("#myt").value.trim(), y = ytParse(v); $("#mytf").classList.toggle("on", !!y);
+    $("#mmsg").textContent = !v ? "Copiez le lien de la vidéo sur YouTube et collez-le ici." : y ? "✓ Vidéo reconnue"+(y.s?` · début à ${fmtSecs(y.s)}`:"") : "⚠️ Lien YouTube non reconnu";
+    if(y && y.s && !$("#mys").value.trim()) $("#mys").value = fmtSecs(y.s);
+    if(y && y.id !== lastId){ lastId = y.id;
+      if(z.qs.some(x => x.yt===y.id)){ $("#mmsg").textContent = "⚠️ Cette vidéo est déjà dans le quiz"; return; }
+      const t = await ytTitle(y.id); if(t && lastId===y.id && !$("#mg").value.trim()){
+        const k = +$("#mqt").value; $("#mg").value = k===0 ? (t.artist ? `${t.song} — ${t.artist}` : t.song) : k===5 ? (t.artist||"") : t.song;
+        $("#mmsg").textContent = "✓ Vidéo reconnue : « "+t.song+" » (vérifiez la bonne réponse)"; }
+    }
+  };
+  const save = () => {
+    const y = ytParse($("#myt").value.trim()); if(!y) return err("Collez un lien YouTube valide (ex. https://youtu.be/…).");
+    const ys = $("#mys").value.trim() ? ytSecs($("#mys").value) : y.s; if(isNaN(ys)) return err("Début de l'extrait : écrivez par ex. 0:45 ou 45.");
+    const k = +$("#mqt").value, q = MUSIC_Q[k][0], g = $("#mg").value.trim(); if(!g) return err("Écrivez la bonne réponse.");
+    let w = [1,2,3].map(i=>$("#mw"+i).value.trim()).filter(Boolean);
+    if(w.length < 3) w = w.concat(musicFakes(q, g, z, 3 - w.length, w));
+    if(!w.length) return err("Ajoutez au moins une mauvaise réponse.");
+    if(new Set([g,...w].map(normQ)).size !== w.length+1) return err("Deux réponses sont identiques.");
+    const item = {c: q.startsWith("🎵 Quel") ? "Blind test" : q.startsWith("🎤") ? "Blind test" : MUSIC_Q[k][1], q, a:[g, ...w.slice(0,3)], yt:y.id, ys, yd:15};
+    if(z.qs.some(x => qKey(x)===qKey(item))) return err("Cette musique est déjà dans le quiz.");
+    z.qs.push(item); QZ.put(z); store.set("qb_music_qt", k); return true;
+  };
+  $("#mf").onsubmit = e => { e.preventDefault(); if(!save()) return; toast(`🎵 Musique ajoutée (${z.qs.filter(x=>x.yt).length})`); addMusic(z, +$("#mqt").value); };
+  $("#mdone").onclick = () => { if($("#myt").value.trim() && !save()) return; if(!z.qs.length){ QZ.del(z.id); return editorHome(); } editQuiz(z.id); };
+  $("#myt").focus();
+}
 function edShell(title, body, back){
   app.innerHTML = `<div class="ed">
     <div class="ed-top">${back?`<button class="btn ghost sm" id="back">← ${back}</button>`:`<a class="btn ghost sm" href="${location.pathname}">← Accueil</a>`}<span style="display:flex;align-items:center;gap:10px"><a class="btn ghost sm" href="guide.html" target="_blank" rel="noopener" data-guide>📖 Aide</a><img class="logo mini" src="logo.png" alt=""></span></div>
@@ -1460,6 +1578,7 @@ function editorHome(){
     <div class="create-grid">
       <button class="create" id="cq"><span class="ci">⚡</span><b>Quiz express</b><small>Cochez des thèmes, l'appli pioche les questions dans la banque. Prêt en 10 secondes.</small></button>
       <button class="create" id="cw"><span class="ci">✍️</span><b>Écrire mes questions</b><small>Tapez vos questions une par une : 4 choix ou vrai/faux.</small></button>
+      <button class="create" id="cbt"><span class="ci">🎵</span><b>Blind test YouTube</b><small>Collez des liens YouTube : l'appli crée les questions « Quel est ce titre ? » avec les mauvaises réponses.</small></button>
       <label class="create"><span class="ci">📥</span><b>Importer un fichier</b><small>Excel (modèle) ou OpenQuizzDB (JSON), plusieurs fichiers à la fois.</small><input type="file" id="imp" multiple accept=".json,.csv,.txt,application/json,text/csv,text/plain" hidden></label>
     </div>
     <p class="muted"><a href="modele-questions.csv" download>📄 Modèle Excel</a> · <a href="#" id="bk">📚 Parcourir la banque (${bank().length} questions)</a></p>
@@ -1471,6 +1590,7 @@ function editorHome(){
   bindCloud(app);
   if(!editorHome._synced){ editorHome._synced = true; syncQuizzes(); }
   $("#cq").onclick = () => quickQuiz();
+  $("#cbt").onclick = () => { const z={id:rid(6), name:"Blind test du "+new Date().toLocaleDateString("fr-FR"), shuffle:true, qs:[]}; QZ.put(z); addMusic(z); };
   $("#cw").onclick = () => { const z={id:rid(6), name:"Mes questions du "+new Date().toLocaleDateString("fr-FR"), shuffle:false, qs:[]}; QZ.put(z); editQuestion(z, null); };
   $("#bk").onclick = e => { e.preventDefault(); bankView(); };
   app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => editQuiz(b.dataset.open));
@@ -1532,6 +1652,7 @@ function editQuiz(id, hint){
       </div>`).join("") || `<p class="muted">Pas encore de question.</p>`}</div>
     <div class="ed-actions sticky">
       <button class="btn" id="add">✍️ Écrire une question</button>
+      <button class="btn ghost" id="addm">🎵 Ajouter une musique (YouTube)</button>
       <button class="btn ghost" id="frombank">📚 Ajouter depuis la banque</button>
       <button class="btn ghost" id="bulk">📋 Coller une liste</button>
     </div>
@@ -1546,6 +1667,7 @@ function editQuiz(id, hint){
   $("#play").onclick = () => { useQuiz(z.id); editQuiz(z.id); };
   $("#add").onclick = () => editQuestion(z, null);
   $("#frombank").onclick = () => bankView(null, null, z.id);
+  $("#addm").onclick = () => addMusic(z);
   $("#bulk").onclick = () => openBulk(z);
   $("#exp").onclick = () => shareOrDownload(`quiz-${slug(z.name)}.json`, JSON.stringify({app:"vandb-quizz", v:1, name:z.name, shuffle:z.shuffle, source:z.source, qs:z.qs}, null, 1));
   $("#dup").onclick = () => { const c = JSON.parse(JSON.stringify(z)); c.id=rid(6); c.name=(z.name+" (copie)").slice(0,60); QZ.put(c); editQuiz(c.id); };
@@ -2077,9 +2199,14 @@ function openGitHub(){
     <label class="fl">Date d'expiration du jeton <small>(laisser vide si « No expiration » ; sert à vous prévenir 30 jours avant)</small><input type="date" id="texp" value="${store.get("qb_gh_exp",0) ? new Date(store.get("qb_gh_exp",0)).toISOString().slice(0,10) : ''}"></label>
     <p class="muted" id="gmsg">Le jeton reste uniquement sur cet appareil.${GH.expDays()!==null ? ` Jeton actuel valable jusqu'au <b>${new Date(store.get("qb_gh_exp",0)).toLocaleDateString("fr-FR")}</b>.` : ''}</p>
     <p class="muted">Renouveler : sur GitHub, ouvrir le jeton « VandB Quizz » → <b>Regenerate token</b> → No expiration, puis coller le nouveau ici.</p>
+    ${GH.ready() ? `<div class="staffnote">👥 <b>Sauvegarde automatique pour tout le staff VandB</b> : choisissez un <b>code staff</b> (8 caractères minimum). Sur chaque nouvel appareil identifié « VandB », le staff n'aura qu'à saisir ce code, une seule fois — sans jeton à copier.
+      <div class="modal-row"><input id="stc" type="password" autocomplete="new-password" placeholder="Code staff (8 caractères min.)" style="flex:1"><button class="btn sm" id="stok">Activer pour le staff</button></div><small id="stmsg" class="muted"></small></div>` : ''}
     <div class="modal-row">${GH.token()?'<button class="btn ghost" id="forget">Déconnecter cet appareil</button>':''}<span style="flex:1"></span><button class="btn ghost" id="cl">Fermer</button><button class="btn" id="ok">Enregistrer</button></div></div>`;
   document.body.appendChild(m);
   $("#cl").onclick = () => m.remove();
+  if($("#stok")) $("#stok").onclick = async () => { const c = $("#stc").value.trim(), msg = $("#stmsg");
+    if(c.length < 8){ msg.textContent = "8 caractères minimum (lettres et chiffres)."; return; }
+    msg.textContent = "Enregistrement…"; try{ await staffSeal(c); staffCfg = true; msg.textContent = "✓ Code staff activé : communiquez-le au staff VandB."; }catch(e){ msg.textContent = "Échec : "+e.message; } };
   if($("#forget")) $("#forget").onclick = () => { store.del("qb_gh_token"); m.remove(); CLOUD.set(""); toast("Appareil déconnecté de la sauvegarde en ligne"); };
   $("#ok").onclick = async () => {
     const tok = $("#tok").value.trim(), oldD = store.get("qb_gh_exp",0) ? new Date(store.get("qb_gh_exp",0)).toISOString().slice(0,10) : "";
@@ -2164,6 +2291,52 @@ const SEASON = {
   mv(s, h, p, r, g){ s.mv.push({id:rid(8), d:Date.now(), h, p:Math.round(p), r:String(r).slice(0,80), g:g||""}); },
   meet(s, h, p){ s.joueurs[h] = {n:p.name, av:p.av, c:p.col, at:Date.now()}; }
 };
+/* ===================== SAUVEGARDE AUTOMATIQUE DU STAFF VANDB =====================
+   Le jeton GitHub est rangé dans le dépôt, chiffré (AES-GCM, clé dérivée du code staff par PBKDF2) :
+   sur un nouvel appareil, le staff saisit seulement le code staff une fois → sauvegarde en ligne activée. */
+const STAFF_NAME = "VandB", SPATH_STAFF = "data/staff.json";
+const isStaff = () => GAMES.key(GAMES.me()) === GAMES.key(STAFF_NAME);
+async function staffKey(code, salt, it){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(code), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:it, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function staffSeal(code){
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), it = 300000;
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM", iv}, await staffKey(code, salt, it), new TextEncoder().encode(GH.token())));
+  await GH.writeJSON(SPATH_STAFF, () => ({app:"vandb-quizz", v:1, info:"Clé de sauvegarde du staff, chiffrée — ne pas modifier", it, salt:b64FromBytes(salt), iv:b64FromBytes(iv), ct:b64FromBytes(ct), maj:Date.now()}), "Sauvegarde automatique du staff");
+}
+async function staffOpen(code){
+  const {data} = await GH.readJSON(SPATH_STAFF); if(!data || !data.ct) throw new Error("aucune sauvegarde staff n'est configurée");
+  try{
+    const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:bytesFromB64(data.iv)}, await staffKey(code, bytesFromB64(data.salt), data.it||300000), bytesFromB64(data.ct));
+    return new TextDecoder().decode(pt);
+  }catch(e){ throw new Error("code staff incorrect"); }
+}
+let staffCfg = null;
+async function staffAvailable(){ if(staffCfg!==null) return staffCfg; try{ const {data} = await GH.readJSON(SPATH_STAFF); staffCfg = !!(data && data.ct); }catch(e){ staffCfg = false; } return staffCfg; }
+/* accueil : si le staff VandB n'a pas encore la sauvegarde en ligne sur cet appareil */
+async function staffSaveHint(){
+  const box = $("#staffsave"); if(!box || MOCK || !GH.repo() || !isStaff() || GH.ready()) return;
+  if(!(await staffAvailable())) return;
+  box.innerHTML = `<button class="adminid ask" id="ssv">☁️ <b>Activer la sauvegarde automatique</b> du staff VandB sur cet appareil<small class="staffhint">Il suffit du code staff, une seule fois</small></button>`;
+  $("#ssv").onclick = () => askStaffCode();
+}
+function askStaffCode(after){
+  const m = modal(`<h3>☁️ Sauvegarde automatique du staff VandB</h3>
+    <p class="muted">Saisissez le <b>code staff</b> (donné par le responsable). Les parties, les quiz et le classement de la saison seront ensuite sauvegardés tout seuls depuis cet appareil.</p>
+    <input id="scode" type="password" autocomplete="current-password" placeholder="Code staff">
+    <p class="warn-t" id="smsg"></p>
+    <div class="modal-row"><button class="btn ghost" id="cl">Plus tard</button><span style="flex:1"></span><button class="btn" id="ok">Activer</button></div>`);
+  const i = m.querySelector("#scode"); i.focus();
+  const ok = async () => {
+    const msg = m.querySelector("#smsg"); msg.textContent = "Vérification…";
+    try{ const tok = await staffOpen(i.value.trim()); await GH.check(tok); store.set("qb_gh_token", tok); m.remove(); toast("☁️ Sauvegarde automatique activée sur cet appareil ✓");
+      syncQuizzes(true); SEASON.sync(); GAMES.sync(); (after||home)(); }
+    catch(e){ msg.textContent = "Échec : " + e.message; }
+  };
+  m.querySelector("#ok").onclick = ok; i.onkeydown = e => { if(e.key==="Enter") ok(); };
+  m.querySelector("#cl").onclick = () => m.remove();
+}
 /* ===================== MES PARTIES (animateur identifié par son nom, sur tous ses appareils) ===================== */
 const GPATH = "data/parties.json";
 const GAMES = {
@@ -2226,7 +2399,8 @@ function askAdminName(after){
     <input id="anm" maxlength="30" autocomplete="name" placeholder="Ex. : VandB" value="${esc(GAMES.me())}">
     <div class="modal-row"><button class="btn ghost" id="cl">Annuler</button><span style="flex:1"></span><button class="btn" id="ok">Valider</button></div>`);
   const i = m.querySelector("#anm"); i.focus();
-  const ok = () => { const n = GAMES.setMe(i.value); if(!n){ i.focus(); return; } m.remove(); toast(`👤 Bonjour ${n} !`); GAMES._sig=""; (after||home)(); };
+  const ok = async () => { const n = GAMES.setMe(i.value); if(!n){ i.focus(); return; } m.remove(); toast(`👤 Bonjour ${n} !`); GAMES._sig=""; (after||home)();
+    if(isStaff() && !MOCK && GH.repo() && !GH.ready() && await staffAvailable()) askStaffCode(after); };
   m.querySelector("#ok").onclick = ok; i.onkeydown = e => { if(e.key==="Enter") ok(); };
   m.querySelector("#cl").onclick = () => m.remove();
 }
