@@ -409,6 +409,19 @@ h2.qtext{font-weight:800;letter-spacing:0}
 .listen{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:3vw;align-items:center}
 .ytslot{width:100%;aspect-ratio:16/9;border-radius:18px;background:#000}
 .listen{flex:1 1 0;grid-template-rows:minmax(0,1fr);overflow:hidden}
+/* le bloc « Écoutez… » s'adapte à la place disponible (jamais de texte coupé) */
+@supports (container-type:size){
+  .listen{container-type:size}
+  .listen-txt{gap:min(1.4vh,4cqh)}
+  .listen-txt h2{font-size:min(3.2em,26cqh)}
+  .listen-txt .qsub{font-size:min(1.5em,13cqh)}
+  .listen .eq{height:min(2.6em,20cqh)}
+  .listen .ytart{font-size:min(9vw,16vh,60cqh)}
+  .listen .ytslot{max-height:100cqh}
+  .qrow:not(.pic){container-type:size}
+  .qrow:not(.pic) > h2.qtext{font-size:min(2.6em,26cqh)}
+  .qrow .ytans{font-size:min(1.15em,11cqh)}
+}
 .listen .ytslot{height:100%;width:auto;max-width:100%;justify-self:center;align-self:center}
 .qrow{flex:1 1 0;grid-template-rows:minmax(0,1fr);overflow:hidden}
 .ytside{height:100%;display:grid!important;grid-template-rows:minmax(0,1fr) auto;justify-items:center;align-items:center}
@@ -449,8 +462,15 @@ h2.qtext{font-weight:800;letter-spacing:0}
 .yt-go{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--gold);color:var(--ink);font-weight:800;border-radius:12px;padding:.8em 1.4em;font-size:max(16px,1.4vw);box-shadow:0 6px 30px #000a;cursor:pointer}
 .qrow{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 30vw;gap:2vw;align-items:center}
 .qrow.pic{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr)}
+.picgrid{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:2.5vw;align-items:stretch}
+.picleft{display:flex;flex-direction:column;justify-content:center;gap:1.6vh;min-height:0;min-width:0}
+.picleft h2.qtext{font-size:2.2em;text-align:left;margin:0}
+.picgrid .choices{grid-template-columns:1fr;font-size:.85em;gap:1.1vh}
+.picgrid .ch{min-height:0;padding:1.3vh 1.2vw}
+.picgrid .qpic{height:100%}
+@media (max-aspect-ratio:1/1){ .picgrid{grid-template-columns:1fr;grid-template-rows:minmax(0,1.1fr) auto} .picgrid .qpic{order:-1} }
 .tv.haspic{gap:1.6vh}.tv.haspic .qrow.pic{flex:3 1 0}.tv.haspic .tv-head .logo{height:7vh}
-.tv.haspic .choices{font-size:.8em;gap:1.2vh 1.2vw}.tv.haspic .ch{min-height:7vh;padding:1.2vh 1.4vw}.tv.haspic h2.qtext{font-size:2.4em}
+
 .qpic{margin:0;height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;justify-items:center;align-items:center;gap:.8vh;overflow:hidden}
 .qpic img{max-width:100%;max-height:100%;min-height:0;object-fit:contain;border-radius:10px;box-shadow:0 10px 34px rgba(29,23,20,.35);background:#fff}
 .qpic .nopic{display:none;color:var(--muted);font-weight:700}
@@ -544,6 +564,9 @@ body::before{background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 
 .modal-box{overflow-y:auto}
 .scrch{display:grid;gap:10px;margin-top:8px}.scrch .btn{width:100%!important;max-width:none!important;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;white-space:normal}
 .scrch .btn small{font-weight:500;font-size:.8em;opacity:.8;text-transform:none;letter-spacing:0}
+.admin-side img.logo{cursor:pointer}.admin-side .home img.logo{cursor:default}
+.ph-top img.logo.mini{height:34px;width:auto}
+.mypos{font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap}.mypos sup{font-size:.7em}
 .curl{word-break:break-all;font-size:.85em}
 .pzb{justify-self:end;font-weight:800;color:var(--acc);background:rgba(246,194,28,.18);padding:.3em .8em;border-radius:999px}
 .tvf-end{display:flex;align-items:center;justify-content:space-between;gap:1vw;min-width:0}
@@ -842,7 +865,7 @@ async function startHost(resume, mode){
     });
     document.addEventListener("visibilitychange", keepAwake);
     window.addEventListener("storage", e => { if(/qb_settings$/.test(e.key||"")) H.settings = Object.assign({}, DEFAULTS, store.get("qb_settings", {})); if(/qb_quizzes|qb_season$|qb_settings$/.test(e.key||"") && !$(".modal")){ A.qsig=""; renderHost(); } });
-    window.addEventListener("beforeunload", e => { if(H.phase!=="lobby"){ saveGame(); e.preventDefault(); e.returnValue=""; } });
+    window.addEventListener("beforeunload", e => { if(window.__leaving){ saveGame(); return; } if(H.phase!=="lobby"){ saveGame(); e.preventDefault(); e.returnValue=""; } });
   }
 }
 function setNet(){ if(H.code) pushDisplay(); }
@@ -932,6 +955,7 @@ function playerState(p){
     const r = ranking();
     Object.assign(s,{rank:p.rank, podium:r.slice(0,3).map(x=>({name:x.name,score:x.score,av:x.av,col:x.col})), prize: p.rank<=3 && hasPrizes() ? prizesOf()[p.rank-1] : ""});
   }
+  if(H.phase!=="lobby"){ if(p.rank==null) ranking(); s.pos = p.rank||0; }
   return s;
 }
 
@@ -1766,14 +1790,14 @@ function renderDisplay(T){
     if(T.ctl) app.querySelectorAll(".chip").forEach(c => c.onclick = () => { const p=H.players.get(c.dataset.pid); if(p && confirm(`Exclure « ${p.name} » ?`)) kickPlayer(p.pid); });
   }
   else if(T.phase==="question"){
-    const q=T.q, limit=T.time*1000, endsAt=Date.now()+T.endsIn;
-    app.innerHTML = `<div class="tv ${q.img && !q.yt?'haspic':''}">${dHead(T)}
+    const q=T.q, limit=T.time*1000, endsAt=Date.now()+T.endsIn, pic = q.img && !q.yt;
+    const timerHTML = `<div class="timer"><div class="track"><div class="bar" id="bar"></div></div><span class="secs" id="secs">${T.time}</span></div>`;
+    app.innerHTML = `<div class="tv ${pic?'haspic':''}">${dHead(T)}
       <div class="qtop"><span class="pill">${esc(q.c)}</span><span>Question ${T.qi+1} / ${T.total}</span><span class="answered"><b id="ans">${T.answered}</b> / <span id="tot">${T.connected}</span> réponses</span></div>
       ${q.yt ? `<div class="listen"><div class="ytslot ytart"><span>♪</span></div><div class="listen-txt"><div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h2>${T.wait?"🎵 Ça arrive…":"🎵 Écoutez…"}</h2><p class="qsub">${esc(q.q)}</p></div></div>`
-             : q.img ? `<div class="qrow pic"><h2 class="qtext">${esc(q.q)}</h2>${picHTML(q.img)}</div>`
+             : pic ? `<div class="picgrid"><div class="picleft"><h2 class="qtext">${esc(q.q)}</h2>${timerHTML}${dCounts(T,false)}</div>${picHTML(q.img)}</div>`
              : `<h2 class="qtext">${esc(q.q)}</h2>`}
-      <div class="timer"><div class="track"><div class="bar" id="bar"></div></div><span class="secs" id="secs">${T.time}</span></div>
-      ${dCounts(T,false)}
+      ${pic ? '' : timerHTML + dCounts(T,false)}
       ${q.alc?`<p class="evin">${EVIN}</p>`:''}
       <div class="tvfoot">${credit}${dCtl(T,"Dévoiler ▶","rv")}${q.yt && T.ctl && T.ytHere ? '<button class="ctl" id="ytre2" type="button">🔁 Extrait</button>' : '<span class="credit"></span>'}</div></div>`;
     const yr2=$("#ytre2"); if(yr2) yr2.onclick = () => { ytReplay(); };
@@ -1782,11 +1806,11 @@ function renderDisplay(T){
     if(T.wait){ bar.style.transform="scaleX(1)"; secs.textContent=T.time; } else tick();
   }
   else if(T.phase==="reveal"){
-    const q=T.q, last=T.qi>=T.total-1;
-    app.innerHTML = `<div class="tv reveal ${q.img && !q.yt?'haspic':''}">${dHead(T)}
+    const q=T.q, last=T.qi>=T.total-1, pic = q.img && !q.yt;
+    app.innerHTML = `<div class="tv reveal ${pic?'haspic':''}">${dHead(T)}
       <div class="qtop"><span class="pill">${esc(q.c)}</span><span>Question ${T.qi+1} / ${T.total}</span><span class="answered"><b>${T.answered}</b> réponses</span></div>
-      ${q.yt ? `<div class="qrow"><h2 class="qtext">${esc(q.q)}</h2><div class="ytside"><img class="ytslot ytthumb" src="https://i.ytimg.com/vi/${esc(q.yt)}/hqdefault.jpg" alt=""><p class="ytans">🎵 ${esc(q.choices[q.correct]||"")}</p></div></div>` : q.img ? `<div class="qrow pic"><h2 class="qtext">${esc(q.q)}</h2>${picHTML(q.img, q.choices[q.correct])}</div>` : `<h2 class="qtext">${esc(q.q)}</h2>`}
-      ${dCounts(T,true)}
+      ${q.yt ? `<div class="qrow"><h2 class="qtext">${esc(q.q)}</h2><div class="ytside"><img class="ytslot ytthumb" src="https://i.ytimg.com/vi/${esc(q.yt)}/hqdefault.jpg" alt=""><p class="ytans">🎵 ${esc(q.choices[q.correct]||"")}</p></div></div>` : pic ? `<div class="picgrid"><div class="picleft"><h2 class="qtext">${esc(q.q)}</h2>${dCounts(T,true)}</div>${picHTML(q.img, q.choices[q.correct])}</div>` : `<h2 class="qtext">${esc(q.q)}</h2>`}
+      ${pic ? '' : dCounts(T,true)}
       ${q.info?`<p class="anec tv-anec">💡 ${esc(q.info)}</p>`:''}
       ${q.alc?`<p class="evin">${EVIN}</p>`:''}
       <div class="tvfoot">${credit}${dCtl(T, last?'Résultats ▶':T.board?'Classement ▶':'Question suivante ▶', "nx")}${dPause(T)}</div>
@@ -2133,7 +2157,7 @@ async function gamesPage(){
       <div class="gact">${live ? `<button class="btn sm" data-res="${esc(r.gid)}">♻️ Reprendre sur cet appareil</button>` : r.fin ? '' : '<span class="muted">Reprise impossible ici (sauvegarde pas encore en ligne)</span>'}
         <button class="btn ghost sm" data-hide="${esc(r.gid)}">Retirer de la liste</button></div></div>`;
   };
-  app.innerHTML = `<div class="ph"><div class="ph-top"><button class="btn ghost sm" id="bk">← Retour</button><span class="kicker">Mes parties</span></div>
+  app.innerHTML = `<div class="ph"><div class="ph-top"><button class="btn ghost sm" id="bk">← Retour</button><span class="kicker">Mes parties</span><img class="logo mini" src="logo.png" alt="Accueil"></div>
     <div class="games-pg">
       <h2>📂 Parties de ${esc(me)}</h2>
       <p class="muted">Toutes les parties lancées sous ce nom, sur n'importe quel appareil. <button class="ios-tip" id="chg">Changer de nom</button> <button class="ios-tip" id="rf">Actualiser</button></p>
@@ -2550,7 +2574,7 @@ async function seasonPage(fromGame){
   // 2) sinon : lecture directe du dépôt GitHub (à jour dès la fin de la partie)
   if(!table){ try{ const r = await GH.readJSON(SPATH); if(r.data && r.data.mv){ s = r.data; table = seasonTable(s); nom = s.nom; at = s.maj||0; hist = hid ? s.mv.filter(x=>x.h===hid).slice(-40).reverse() : []; } }catch(e){} }
   const me = table && table.find(x=>x.h===hid), uid = myUid(false);
-  app.innerHTML = `<div class="ph"><div class="ph-top"><button class="btn ghost sm" id="bk">← Retour</button><span class="kicker">Saison</span></div>
+  app.innerHTML = `<div class="ph"><div class="ph-top"><button class="btn ghost sm" id="bk">← Retour</button><span class="kicker">Saison</span>${fromGame ? '' : '<img class="logo mini" src="logo.png" alt="Accueil">'}</div>
     <div class="season-pg">
       <h2>🏆 ${esc(nom || "Classement de la saison")}</h2>${at?`<p class="muted">À jour : ${new Date(at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · <button class="ios-tip" id="rf">Actualiser</button></p>`:''}
       ${me ? `<div class="mycard" style="--pc:${okCol(me.c)}">${avHTML({av:me.av,col:me.c},"big")}<div><b>${esc(me.n)}</b><span>${me.rank}<sup>${me.rank===1?'er':'e'}</sup> sur ${table.length} · <b>${me.pts} pts</b> · ${me.parties} partie${me.parties>1?'s':''}</span></div></div>`
@@ -2699,7 +2723,8 @@ function onPData(d){
   if(d.phase==="reveal" && !(prev&&prev.phase==="reveal"&&prev.qi===d.qi) && navigator.vibrate) navigator.vibrate(d.mine===d.correct?[60,40,60]:200);
   renderPlayer();
 }
-function topBar(extra){ const s=P.st; return `<div class="ph-top"><span class="me" style="--pc:${okCol(s.col)}">${avHTML(s,"sm")}${esc(s.name)}</span>${extra||`<span>${s.score} pts</span>`}</div>`; }
+function topBar(extra){ const s=P.st, pos = s.phase!=="lobby" && s.pos && s.players>1 ? `<span class="mypos" title="Ton classement">🏅 ${s.pos}<sup>${s.pos===1?'er':'e'}</sup>/${s.players}</span>` : '';
+  return `<div class="ph-top"><span class="me" style="--pc:${okCol(s.col)}">${avHTML(s,"sm")}${esc(s.name)}</span>${pos}${extra||`<span>${s.score} pts</span>`}</div>`; }
 function renderPlayer(){
   cancelAnimationFrame(P.raf);
   const s=P.st;
@@ -2752,6 +2777,19 @@ function renderPlayer(){
   }
 }
 
+/* côté régie / animateur : un clic sur le logo VandB ramène à l'accueil */
+const ADMIN_SIDE = !ROOM && !QS.has("ecran") && !QS.get("tv");
+if(ADMIN_SIDE){
+  document.documentElement.classList.add("admin-side");
+  document.addEventListener("click", e => {
+    const l = e.target.closest && e.target.closest("img.logo"); if(!l || l.closest(".home") || l.closest(".modal")) return;
+    const live = typeof H!=="undefined" && H.code;
+    if(live && !confirm(H.phase==="lobby" ? "Revenir à l'accueil ? Les joueurs connectés devront rescanner le QR code." : "Revenir à l'accueil ? La partie est sauvegardée : vous pourrez la reprendre depuis l'accueil (♻️ Reprendre la partie).")) return;
+    if(live && H.phase!=="lobby") saveGame();
+    window.__leaving = true;
+    location.href = location.pathname + (QS.get("dev") ? "?dev="+encodeURIComponent(QS.get("dev")) : "");
+  });
+}
 /* ===================== DÉMARRAGE ===================== */
 if(QS.has("admin") && ROOM) adminRemote(QS.get("admin"));
 else if(ROOM) playerJoin();
