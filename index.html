@@ -1800,6 +1800,22 @@ function sfxSync(phase, qi, here, gid, rsfx, on, vol, zap){
   if(phase==="end" && here) SFX.play("acclamations", "end|"+(gid||""));
   else if(phase!=="end") SFX.stop("acclamations");
 }
+/* le texte de l'écran se réduit tout seul s'il ne tient pas dans son cadre (vieux navigateurs de TV / projecteur, polices Windows…) */
+function fitBox(box, el){
+  if(!box || !el) return;
+  el.style.fontSize = ""; let f = 1;
+  const over = () => box.scrollHeight > box.clientHeight + 2 || el.scrollHeight > el.clientHeight + 2 && getComputedStyle(el).overflow!=="visible";
+  while(over() && f > 0.35){ f -= 0.05; el.style.fontSize = f.toFixed(2)+"em"; }
+}
+function fitTV(){
+  try{
+    const L = app.querySelector(".listen"); if(L) fitBox(L, L.querySelector(".listen-txt"));
+    app.querySelectorAll(".qrow:not(.pic)").forEach(r => fitBox(r, r.querySelector("h2.qtext")));
+    const P = app.querySelector(".picleft"); if(P) fitBox(P, P);
+  }catch(e){}
+}
+let fitT = 0; window.addEventListener("resize", () => { clearTimeout(fitT); fitT = setTimeout(fitTV, 120); });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitTV());
 /* ---- rendu (fenêtre écran ou mode écran unique) ---- */
 function dHead(T){
   return `<header class="tv-head"><div style="display:flex;align-items:center;gap:1.5vw"><img class="logo" src="logo.png" alt="VandB Quizz"></div>
@@ -1885,10 +1901,13 @@ function renderDisplay(T){
   }
   else if(T.phase==="leaderboard"){
     const r=T.players.slice(0,8), z=T.zap, off = z ? ZAP_MS : 0;
+    // l'écran peut être redessiné pendant le classement (connexions, réglages…) : on reprend les animations là où elles en sont
+    const lbKey = (T.gid||"")+"|"+T.qi; if(DSP.lbKey !== lbKey){ DSP.lbKey = lbKey; DSP.lbT0 = Date.now(); }
+    const el = Date.now() - DSP.lbT0, dl = ms => `${Math.round(ms - el)}ms`;
     app.innerHTML = `<div class="tv ${z?'withzap':''}">${dHead(T)}
-      ${z ? `<div class="zap" style="--pc:${okCol(z.col)}"><div class="zbolt">⚡</div><div class="zk">Le plus rapide des 5 dernières questions</div><div class="zwho">${avHTML(z,"big")}<b>${esc(z.name)}</b></div><div class="zt">${String(z.t).replace(".",",")} s</div></div>` : ''}
-      <div class="lb"><h2 style="animation-delay:${off}ms">Classement après ${T.qi+1} question${T.qi?'s':''}</h2>
-      ${r.map((p,i)=>`<div class="row ${i===0?'lead':''}" style="animation-delay:${off + (i===0 ? 3600 : Math.round((r.length-1-i)*Math.min(450, 2400/Math.max(1,r.length-2))))}ms;--pc:${okCol(p.col)}"><span class="rk">${p.rank}</span>${avHTML(p)}<span class="nm">${esc(p.name)}</span>${p.gain?`<span class="gain">+${p.gain}</span>`:''}<span class="sc">${p.score}</span></div>`).join("") || '<p class="empty">Aucun joueur</p>'}
+      ${z && el < 3100 ? `<div class="zap" style="--pc:${okCol(z.col)};animation-delay:${dl(0)},${dl(2600)}"><div class="zbolt">⚡</div><div class="zk">Le plus rapide des 5 dernières questions</div><div class="zwho">${avHTML(z,"big")}<b>${esc(z.name)}</b></div><div class="zt">${String(z.t).replace(".",",")} s</div></div>` : ''}
+      <div class="lb"><h2 style="animation-delay:${dl(off)}">Classement après ${T.qi+1} question${T.qi?'s':''}</h2>
+      ${r.map((p,i)=>`<div class="row ${i===0?'lead':''}" style="animation-delay:${dl(off + (i===0 ? 3600 : Math.round((r.length-1-i)*Math.min(450, 2400/Math.max(1,r.length-2)))))};--pc:${okCol(p.col)}"><span class="rk">${p.rank}</span>${avHTML(p)}<span class="nm">${esc(p.name)}</span>${p.gain?`<span class="gain">+${p.gain}</span>`:''}<span class="sc">${p.score}</span></div>`).join("") || '<p class="empty">Aucun joueur</p>'}
       </div>
       <div class="tvfoot">${credit}${dCtl(T,"Suivant ▶","nx")}${dPause(T)}</div></div>`;
   }
@@ -1913,6 +1932,7 @@ function renderDisplay(T){
   const pz2 = $("#pz2"); if(pz2) pz2.onclick = () => togglePause();
   ytSync(T);
   if(T.nxImg) picPreload(T.nxImg); if(T.q && T.q.img) picPreload(T.q.img);
+  fitTV();
   sfxSync(T.phase, T.qi, T.ytHere!==false && !(T.view==="season" && T.season), T.gid, T.rsfx, T.sfx && !T.mute, T.mute ? 0 : (T.svol==null ? 80 : T.svol)/100, !!T.zap);
   if(T.ytHere!==false && (T.board || T.phase==="leaderboard")) SFX.get("roulement");
   if(T.ytHere!==false && T.phase==="reveal" && T.qi>=T.total-1) SFX.get("acclamations");
