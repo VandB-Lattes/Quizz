@@ -567,6 +567,22 @@ body::before{background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 
 .admin-side img.logo{cursor:pointer}.admin-side .home img.logo{cursor:default}
 .ph-top img.logo.mini{height:34px;width:auto}
 .mypos{font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap}.mypos sup{font-size:.7em}
+.lb .row.lead{animation:slide .45s both, leadpop .7s both}
+@keyframes leadpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+.vol{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.vol input{flex:1;min-width:120px}.vol b{min-width:3.2em;text-align:right}
+.staffnote{background:rgba(246,194,28,.16);border:1px solid rgba(246,194,28,.45);border-radius:10px;padding:8px 12px;font-size:.92em}
+.adminid .staffhint{display:block;font-size:.82em;opacity:.8;margin-top:2px}
+.zap{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;
+  background:radial-gradient(circle at 50% 40%, #fff6c8 0, #f6c21c 35%, #1d1714 100%);color:#1d1714;animation:zapin .35s both, zapout .45s 2.6s both;pointer-events:none}
+.zap .zbolt{font-size:min(20vh,20vw);line-height:1.15;margin-bottom:2vh;animation:zapflash .5s 3 alternate;filter:drop-shadow(0 0 30px #fff)}
+.zap .zk{font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:clamp(14px,2.4vw,40px)}
+.zap .zwho{display:flex;align-items:center;gap:1.4vw;font-size:clamp(28px,6vw,110px);font-weight:900}
+.zap .zt{font-size:clamp(18px,3vw,56px);font-weight:800;color:#fff;text-shadow:0 2px 12px #000}
+@keyframes zapin{from{opacity:0;transform:scale(1.15)}to{opacity:1;transform:none}}
+@keyframes zapout{to{opacity:0;visibility:hidden}}
+@keyframes zapflash{from{opacity:1;transform:scale(1)}to{opacity:.6;transform:scale(1.05) rotate(-5deg)}}
+.tv.withzap .lb h2{animation:fadein .4s both}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
 .curl{word-break:break-all;font-size:.85em}
 .pzb{justify-self:end;font-weight:800;color:var(--acc);background:rgba(246,194,28,.18);padding:.3em .8em;border-radius:999px}
 .tvf-end{display:flex;align-items:center;justify-content:space-between;gap:1vw;min-width:0}
@@ -753,7 +769,7 @@ function home(){
   <div class="home"><div class="home-card">
     <img class="logo" src="logo.png" alt="VandB Quizz Blind Test">
     <p>L'écran TV affiche les questions, chacun répond sur son téléphone.</p>
-    ${GAMES.me() ? `<div class="adminid">👤 Animateur : <b>${esc(GAMES.me())}</b> <button class="ios-tip" id="aid">changer</button></div>` : `<button class="adminid ask" id="aid">👤 Animateur ? <b>Identifiez-vous</b> pour retrouver vos parties sur tous vos appareils</button>`}
+    ${GAMES.me() ? `<div class="adminid">👤 Animateur : <b>${esc(GAMES.me())}</b> <button class="ios-tip" id="aid">changer</button></div>` : `<button class="adminid ask" id="aid">👤 Animateur ? <b>Identifiez-vous</b> pour retrouver vos parties sur tous vos appareils<small class="staffhint">Staff VandB : nom « VandB »</small></button>`}
     <div class="stack">
       ${canResume?`<button class="btn" id="resume">♻️ Reprendre la partie (code ${esc(sv.code)}, ${sv.players.length} joueurs)</button>`:''}
       <button class="btn ${canResume?'ghost':''}" id="host">📺 ${canResume?'Nouvelle partie':'Lancer la partie (animateur)'}</button>
@@ -1037,12 +1053,15 @@ function reveal(){
   });
   q.res = {}; H.answers.forEach((a, pid) => { q.res[pid] = [Math.round(a.t/100), a.choice===q.correct ? 1 : 0, a.choice]; });
   q.roast = roastFor(q);
+  // bruitage du dévoilement : « boing » pour la vanne, trombone triste si personne n'a trouvé
+  const nOk = [...H.answers.values()].filter(a => a.choice===q.correct).length;
+  q.sfx = q.roast ? "boing" : (H.players.size && !nOk ? "trombone" : "");
   H.phase="reveal"; broadcast(); renderHost(); saveGame();
   autoNext();
 }
 /* enchaînement automatique : 5 s entre deux questions, sauf si l'animateur a mis en pause */
 const AUTO_GAP = 5000;
-function autoNext(){ clearTimeout(H.autoT); if(H.settings.auto && !H.paused && (H.phase==="reveal"||H.phase==="leaderboard")) H.autoT = setTimeout(advance, AUTO_GAP); }
+function autoNext(){ clearTimeout(H.autoT); if(H.settings.auto && !H.paused && (H.phase==="reveal"||H.phase==="leaderboard")) H.autoT = setTimeout(advance, H.phase==="leaderboard" ? AUTO_GAP + 3000 + (H.zap ? ZAP_MS : 0) : AUTO_GAP); }
 function togglePause(on){
   H.paused = on==null ? !H.paused : !!on;
   if(H.paused) clearTimeout(H.autoT); else autoNext();
@@ -1078,7 +1097,16 @@ function roastFor(q){
   return {pid:p.pid, name:p.name, av:p.av, col:p.col, msg:list[h % list.length]};
 }
 const roastHTML = r => esc(r.msg).replace("{n}", `<em>${esc(r.name)}</em>`);
-function showBoard(){ clearTimers(); H.phase="leaderboard"; broadcast(); renderHost(); saveGame(); autoNext(); }
+/* ⚡ joueur le plus rapide : la bonne réponse la plus rapide des 5 dernières questions */
+const ZAP_MS = 3000;
+function zapOf(){
+  let best = null;
+  for(let i = Math.max(0, H.qi-4); i <= H.qi; i++){ const r = H.qs[i] && H.qs[i].res; if(!r) continue;
+    Object.entries(r).forEach(([pid, x]) => { if(x && x[1] && (!best || x[0] < best.t)) best = {pid, t:x[0]}; }); }
+  const p = best && H.players.get(best.pid);
+  return p ? {pid:p.pid, name:p.name, av:p.av, col:p.col, t:best.t/10} : null;
+}
+function showBoard(){ clearTimers(); H.zap = zapOf(); H.phase="leaderboard"; broadcast(); renderHost(); saveGame(); autoNext(); }
 function endGame(){
   clearTimers(); H.phase="end"; applySeason(); broadcast(); renderHost(); saveGame();
 }
@@ -1182,6 +1210,8 @@ window.addEventListener("scroll", () => ytPlace(), {passive:true});
 function ytStop(){ clearTimeout(YTP.wt); const g = $("#ytgo"); if(g) g.classList.add("hidden"); try{ YTP.p && YTP.p.pauseVideo && YTP.p.pauseVideo(); }catch(e){} if(YTP.box) YTP.box.classList.add("hidden"); YTP.key = ""; }
 function ytSync(T){
   const here = T && T.ytHere!==false;
+  YTP.vol = T && T.mute ? 0 : (T && T.vol!=null ? +T.vol : 100);
+  try{ if(YTP.p && YTP.p.setVolume) YTP.p.setVolume(YTP.vol); }catch(e){}
   const q = T && T.q, on = q && q.yt && here && !(T.view==="season" && T.season) && (T.phase==="question" || T.phase==="reveal");
   if(!on){ if(YTP.key || (YTP.box && !YTP.box.classList.contains("hidden"))) ytStop(); ytPre(T, here); return; }
   const b = ytBox(); b.classList.remove("hidden"); b.classList.toggle("blind", T.phase==="question" && !T.noBlur); b.classList.toggle("clear", T.phase==="reveal");
@@ -1200,7 +1230,7 @@ function ytNew(host, c, muted){
 }
 function ytReady(pl){
   if(pl === YTP.pre){ try{ pl.mute(); pl.playVideo(); }catch(_){} return; }
-  try{ pl.unMute(); pl.setVolume(100); pl.playVideo(); }catch(_){} ytWatch();
+  try{ pl.unMute(); pl.setVolume(YTP.vol==null?100:YTP.vol); pl.playVideo(); }catch(_){} ytWatch();
 }
 function ytState(pl, st){
   if(pl === YTP.pre){ if(st===1 && !YTP.preOk){ YTP.preOk = true; try{ pl.pauseVideo(); }catch(_){} } return; }
@@ -1227,7 +1257,7 @@ async function ytPlay(){
     YTP.p = YTP.pre; YTP.fp = YTP.fpre; YTP.pre = op; YTP.fpre = of; YTP.preKey = "";
     YTP.fp.classList.remove("standby"); if(YTP.fpre) YTP.fpre.classList.add("standby");
     try{ op && op.pauseVideo && op.pauseVideo(); }catch(e){}
-    try{ YTP.p.seekTo(c.s, true); YTP.p.unMute(); YTP.p.setVolume(100); YTP.p.playVideo(); }catch(e){}
+    try{ YTP.p.seekTo(c.s, true); YTP.p.unMute(); YTP.p.setVolume(YTP.vol==null?100:YTP.vol); YTP.p.playVideo(); }catch(e){}
     if(YTP.p.getPlayerState && YTP.p.getPlayerState()===1){ YTP.started = true; ytStarted(); }
     ytWatch(); return;
   }
@@ -1622,7 +1652,7 @@ function displayState(){
   const counts=[0,0,0,0]; H.answers.forEach(a=>counts[a.choice]++);
   const r=ranking(), q=H.qs[H.qi], showCorrect = H.phase==="reveal" || H.phase==="leaderboard";
   return {t:"dstate", code:H.code, url:joinUrl(), phase:H.phase, view:H.view||"", online:H.online, turn:HAS_TURN, info:quizInfo(), src:H.src||"",
-    time:H.settings.time, ctl:H.mode==="ecran", auto:!!H.settings.auto, paused:!!H.paused,
+    time:H.settings.time, ctl:H.mode==="ecran", auto:!!H.settings.auto, paused:!!H.paused, gid:H.gid||"", sfx:H.settings.sfx!==false, mute:!!H.settings.mute, vol:H.settings.vol==null?100:H.settings.vol, svol:H.settings.svol==null?80:H.settings.svol, zap: H.phase==="leaderboard" ? H.zap||null : null, rsfx: H.phase==="reveal" && q ? q.sfx||"" : "",
     players:r.map(p=>({pid:p.pid,name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0})),
     qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", yt2:q.yt2||"", ys:q.ys||0, yd:ytDur(), img:q.img||"", choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, nx:nxYt(), nxImg:(H.qs[H.qi+1]||{}).img||"", ytHere: H.mode==="regie" ? sndTarget()==="ecran" : sndTarget()==="host", snd:sndTarget(),
     counts, answered:H.answers.size, connected:connectedCount(),
@@ -1734,6 +1764,42 @@ function openTV(){
   }
   setTimeout(pushDisplay, 600);
 }
+/* ---- bruitages (fichiers dans le dossier sons/) : joués là où sort le son du blind test ---- */
+const SFX = {files:{roulement:"sons/roulement.mp3", acclamations:"sons/acclamations.mp3", tictac:"sons/tictac.mp3", gong:"sons/gong.mp3", trombone:"sons/trombone.mp3", boing:"sons/boing.mp3", eclair:"sons/eclair.mp3"}, tk:"", gk:"", a:{}, last:"", vol:0.8, lbk:"", lbt:0,
+  get(k){ if(!this.a[k]){ const a = new Audio(this.files[k]); a.preload = "auto"; this.a[k] = a; } return this.a[k]; },
+  on:true,
+  play(k, key){ if(!this.on) return; if(key){ if(key===this.last) return; this.last = key; } try{ const a = this.get(k); a.currentTime = 0; a.volume = Math.max(0, Math.min(1, this.vol)); const p = a.play(); if(p && p.catch) p.catch(()=>{}); }catch(e){} },
+  stop(k){ try{ const a = this.a[k]; if(a){ a.pause(); a.currentTime = 0; } }catch(e){} }
+};
+/* classement intermédiaire : roulement de tambour pendant l'apparition des lignes */
+/* 5 dernières secondes : tic-tac qui s'accélère (jamais pendant un extrait de blind test) */
+function sfxTick(left, here, key){
+  const on = SFX.on && here && left > 0 && left <= 5000;
+  if(!on){ if(SFX.tk){ SFX.stop("tictac"); SFX.tk = left > 0 && SFX.tk===key ? SFX.tk : ""; } return; }
+  const a = SFX.get("tictac");
+  if(SFX.tk !== key){ SFX.tk = key; try{ a.currentTime = 0; a.volume = Math.max(0, Math.min(1, SFX.vol*0.9)); a.preservesPitch = false; const p = a.play(); if(p && p.catch) p.catch(()=>{}); }catch(e){} }
+  try{ a.playbackRate = 1 + 0.7 * Math.min(1, (5000 - left) / 5000); }catch(e){}
+}
+/* fin du temps : gong (une seule fois par question) */
+function sfxGong(left, here, key){
+  if(SFX.on && here && left <= 0 && SFX.gk !== key){ SFX.gk = key; try{ const a = SFX.get("gong"); a.currentTime = 0; a.volume = Math.max(0, Math.min(1, SFX.vol)); const p = a.play(); if(p && p.catch) p.catch(()=>{}); }catch(e){} }
+  else if(left > 0) SFX.get("gong");
+}
+/* podium final : acclamations de la foule ; dévoilement : boing / trombone */
+function sfxSync(phase, qi, here, gid, rsfx, on, vol, zap){
+  SFX.vol = vol==null ? 0.8 : vol;
+  SFX.on = on!==false && SFX.vol > 0; if(!SFX.on){ Object.keys(SFX.a).forEach(k => SFX.stop(k)); clearTimeout(SFX.rt); clearTimeout(SFX.lbt); }
+  Object.values(SFX.a).forEach(a => { try{ if(!a.paused) a.volume = Math.max(0, Math.min(1, SFX.vol)); }catch(e){} });
+  if(phase==="reveal" && here && rsfx && SFX.rk !== "rv|"+(gid||"")+"|"+qi){ SFX.rk = "rv|"+(gid||"")+"|"+qi; clearTimeout(SFX.rt); SFX.rt = setTimeout(() => SFX.play(rsfx, SFX.rk), 600); }
+  if(phase!=="reveal"){ clearTimeout(SFX.rt); SFX.stop("trombone"); SFX.stop("boing"); }
+  // classement : ⚡ éclair pour le joueur le plus rapide, puis roulement de tambour pendant l'apparition des lignes
+  if(phase==="leaderboard" && here && SFX.on){ const k = "lb|"+(gid||"")+"|"+qi;
+    if(SFX.lbk !== k){ SFX.lbk = k; clearTimeout(SFX.lbt); if(zap){ SFX.play("eclair"); SFX.lbt = setTimeout(() => SFX.play("roulement"), ZAP_MS); } else SFX.play("roulement"); } }
+  else if(phase!=="leaderboard"){ clearTimeout(SFX.lbt); SFX.stop("roulement"); SFX.stop("eclair"); }
+  if(phase!=="question") sfxTick(0);
+  if(phase==="end" && here) SFX.play("acclamations", "end|"+(gid||""));
+  else if(phase!=="end") SFX.stop("acclamations");
+}
 /* ---- rendu (fenêtre écran ou mode écran unique) ---- */
 function dHead(T){
   return `<header class="tv-head"><div style="display:flex;align-items:center;gap:1.5vw"><img class="logo" src="logo.png" alt="VandB Quizz"></div>
@@ -1802,7 +1868,8 @@ function renderDisplay(T){
       <div class="tvfoot">${credit}${dCtl(T,"Dévoiler ▶","rv")}${q.yt && T.ctl && T.ytHere ? '<button class="ctl" id="ytre2" type="button">🔁 Extrait</button>' : '<span class="credit"></span>'}</div></div>`;
     const yr2=$("#ytre2"); if(yr2) yr2.onclick = () => { ytReplay(); };
     const bar=$("#bar"), secs=$("#secs");
-    const tick=()=>{ const left=Math.max(0,endsAt-Date.now()); bar.style.transform=`scaleX(${left/limit})`; const s=Math.ceil(left/1000); secs.textContent=s; secs.classList.toggle("hot",s<=5); if(left>0) DSP.raf=requestAnimationFrame(tick); };
+    const tickHere = T.ytHere!==false && !q.yt, tickKey = "q|"+(T.gid||"")+"|"+T.qi;
+    const tick=()=>{ const left=Math.max(0,endsAt-Date.now()); bar.style.transform=`scaleX(${left/limit})`; const s=Math.ceil(left/1000); secs.textContent=s; secs.classList.toggle("hot",s<=5); sfxTick(left, tickHere, tickKey); if(!T.wait) sfxGong(left, T.ytHere!==false, tickKey); if(left>0) DSP.raf=requestAnimationFrame(tick); };
     if(T.wait){ bar.style.transform="scaleX(1)"; secs.textContent=T.time; } else tick();
   }
   else if(T.phase==="reveal"){
@@ -1817,10 +1884,11 @@ function renderDisplay(T){
       ${T.roast?`<div class="roast" style="--pc:${okCol(T.roast.col)}">${avHTML(T.roast)}<div><span>${roastHTML(T.roast)}</span></div></div>`:''}</div>`;
   }
   else if(T.phase==="leaderboard"){
-    const r=T.players.slice(0,8);
-    app.innerHTML = `<div class="tv">${dHead(T)}
-      <div class="lb"><h2>Classement après ${T.qi+1} question${T.qi?'s':''}</h2>
-      ${r.map((p,i)=>`<div class="row" style="animation-delay:${i*70}ms;--pc:${okCol(p.col)}"><span class="rk">${p.rank}</span>${avHTML(p)}<span class="nm">${esc(p.name)}</span>${p.gain?`<span class="gain">+${p.gain}</span>`:''}<span class="sc">${p.score}</span></div>`).join("") || '<p class="empty">Aucun joueur</p>'}
+    const r=T.players.slice(0,8), z=T.zap, off = z ? ZAP_MS : 0;
+    app.innerHTML = `<div class="tv ${z?'withzap':''}">${dHead(T)}
+      ${z ? `<div class="zap" style="--pc:${okCol(z.col)}"><div class="zbolt">⚡</div><div class="zk">Le plus rapide des 5 dernières questions</div><div class="zwho">${avHTML(z,"big")}<b>${esc(z.name)}</b></div><div class="zt">${String(z.t).replace(".",",")} s</div></div>` : ''}
+      <div class="lb"><h2 style="animation-delay:${off}ms">Classement après ${T.qi+1} question${T.qi?'s':''}</h2>
+      ${r.map((p,i)=>`<div class="row ${i===0?'lead':''}" style="animation-delay:${off + (i===0 ? 3600 : Math.round((r.length-1-i)*Math.min(450, 2400/Math.max(1,r.length-2))))}ms;--pc:${okCol(p.col)}"><span class="rk">${p.rank}</span>${avHTML(p)}<span class="nm">${esc(p.name)}</span>${p.gain?`<span class="gain">+${p.gain}</span>`:''}<span class="sc">${p.score}</span></div>`).join("") || '<p class="empty">Aucun joueur</p>'}
       </div>
       <div class="tvfoot">${credit}${dCtl(T,"Suivant ▶","nx")}${dPause(T)}</div></div>`;
   }
@@ -1845,6 +1913,9 @@ function renderDisplay(T){
   const pz2 = $("#pz2"); if(pz2) pz2.onclick = () => togglePause();
   ytSync(T);
   if(T.nxImg) picPreload(T.nxImg); if(T.q && T.q.img) picPreload(T.q.img);
+  sfxSync(T.phase, T.qi, T.ytHere!==false && !(T.view==="season" && T.season), T.gid, T.rsfx, T.sfx && !T.mute, T.mute ? 0 : (T.svol==null ? 80 : T.svol)/100, !!T.zap);
+  if(T.ytHere!==false && (T.board || T.phase==="leaderboard")) SFX.get("roulement");
+  if(T.ytHere!==false && T.phase==="reveal" && T.qi>=T.total-1) SFX.get("acclamations");
 }
 function picHTML(src, cap){
   return `<figure class="qpic"><img src="${esc(src)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('broken')"><span class="nopic">🖼️ Image indisponible</span>${cap?`<figcaption class="ytans">🖼️ ${esc(cap)}</figcaption>`:''}</figure>`;
@@ -2131,7 +2202,8 @@ const GAMES = {
 };
 function askAdminName(after){
   const m = modal(`<h3>👤 Qui anime ?</h3><p class="muted">Votre prénom ou nom d'animateur : sur n'importe quel appareil, saisissez le même nom pour retrouver toutes vos parties.</p>
-    <input id="anm" maxlength="30" autocomplete="name" placeholder="Ex. : Julien" value="${esc(GAMES.me())}">
+    <p class="staffnote">🍷 <b>Staff VandB :</b> identifiez-vous avec le nom <b>VandB</b> pour retrouver les parties et le classement de la saison du bar.</p>
+    <input id="anm" maxlength="30" autocomplete="name" placeholder="Ex. : VandB" value="${esc(GAMES.me())}">
     <div class="modal-row"><button class="btn ghost" id="cl">Annuler</button><span style="flex:1"></span><button class="btn" id="ok">Valider</button></div>`);
   const i = m.querySelector("#anm"); i.focus();
   const ok = () => { const n = GAMES.setMe(i.value); if(!n){ i.focus(); return; } m.remove(); toast(`👤 Bonjour ${n} !`); GAMES._sig=""; (after||home)(); };
@@ -2234,6 +2306,10 @@ function settingsHTML(s, quizzes, nb){
       <label>Temps<select data-k="time">${[10,15,20,30,45,60].map(v=>`<option value="${v}" ${v===s.time?'selected':''}>${v} s</option>`).join("")}</select></label>
     </div>
     <label class="tg"><input type="checkbox" data-k="auto" ${s.auto?'checked':''}> Enchaînement automatique</label>
+    <label class="tg"><input type="checkbox" data-k="sfx" ${s.sfx!==false?'checked':''}> 🔔 Bruitages (tic-tac, gong, tambour, applaudissements…)</label>
+    <label class="vol">🎵 Volume des extraits <input type="range" data-k="vol" min="0" max="100" step="5" value="${s.vol==null?100:s.vol}"><b>${s.vol==null?100:s.vol} %</b></label>
+    <label class="vol">🔔 Volume des bruitages <input type="range" data-k="svol" min="0" max="100" step="5" value="${s.svol==null?80:s.svol}"><b>${s.svol==null?80:s.svol} %</b></label>
+    <label class="tg"><input type="checkbox" data-k="mute" ${s.mute?'checked':''}> 🔇 Couper tout le son (extraits et bruitages)</label>
     <label>🔊 Son du blind test<select data-k="son">${[["auto","Automatique : écran casté s'il y en a un"],["regie","Ordinateur de l'animateur"],["ecran","Écran TV (fenêtre ou onglet casté)"]].map(([v,l])=>`<option value="${v}" ${(s.son||"auto")===v?'selected':''}>${l}</option>`).join("")}</select></label>
     <label class="tg"><input type="checkbox" data-k="hideQ" ${s.hideQ?'checked':''}> Question seulement sur la TV (anti-triche)</label>
     <label class="tg"><input type="checkbox" data-k="season" ${s.season!==false?'checked':''}> Compter les points pour la saison</label>
@@ -2244,9 +2320,10 @@ function settingsHTML(s, quizzes, nb){
 }
 function bindSettings(root, apply){
   root.querySelectorAll("[data-k]").forEach(el => {
-    const fire = () => { const k=el.dataset.k; const v = el.type==="checkbox" ? el.checked : (k==="n"||k==="time") ? +el.value : el.value;
+    const fire = () => { const k=el.dataset.k; const v = el.type==="checkbox" ? el.checked : (k==="n"||k==="time"||el.type==="range") ? +el.value : el.value;
+      if(el.type==="range"){ const o = el.parentNode.querySelector("b"); if(o) o.textContent = el.value+" %"; }
       if(k==="quiz"){ const c=root.querySelector(".scats"); if(c) c.hidden = v!=="builtin"; } apply(k, v); };
-    if(el.type==="text") el.oninput = fire; else el.onchange = fire;
+    if(el.type==="text") el.oninput = fire; else if(el.type==="range"){ el.oninput = () => { const o = el.parentNode.querySelector("b"); if(o) o.textContent = el.value+" %"; }; el.onchange = fire; } else el.onchange = fire;
   });
   const sc = root.querySelector(".scats");
   if(sc){ const sel = new Set([...sc.querySelectorAll(".chip-s.on")].map(x=>x.dataset.s));
@@ -2259,7 +2336,8 @@ function renderRegie(){
   A.local = true; A.send = m => adminData(LOCALCONN, m);
   A.st = adminState(); if(A.st.phase==="question") A.endsAt = Date.now()+A.st.endsIn;
   renderRemote();
-  const s = A.st; ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, nx:s.nx, noBlur:true, ytHere: sndTarget()==="regie", wait:s.wait, time:s.settings&&s.settings.time, endsIn:s.phase==="question" ? Math.max(0, A.endsAt-Date.now()) : 0});
+  const s = A.st, hs = H.settings; sfxSync(s.phase, s.qi, sndTarget()==="regie", H.gid, s.rsfx, hs.sfx!==false && !hs.mute, hs.mute ? 0 : (hs.svol==null ? 80 : hs.svol)/100, !!H.zap && s.phase==="leaderboard"); if(sndTarget()==="regie"){ SFX.get("roulement"); if(s.phase==="reveal" && s.qi>=s.total-1) SFX.get("acclamations"); }
+  ytSync({q:s.q, phase:s.phase, qi:s.qi, ytn:s.ytn, nx:s.nx, noBlur:true, ytHere: sndTarget()==="regie", vol:hs.vol, mute:hs.mute, wait:s.wait, time:s.settings&&s.settings.time, endsIn:s.phase==="question" ? Math.max(0, A.endsAt-Date.now()) : 0});
 }
 const LOCALCONN = {admin:true, open:true, send:m => { if(m && m.t==="toast") toast(m.msg); }, on(){} };
 function applySetting(k, v){
@@ -2268,7 +2346,8 @@ function applySetting(k, v){
   else if(k==="quiz") s.quiz = (v==="builtin" || QZ.get(v)) ? v : "builtin";
   else if(k==="n") s.n = [0,5,10,15,20,25,30,40].includes(+v) ? +v : 15;
   else if(k==="time") s.time = [10,15,20,30,45,60].includes(+v) ? +v : 20;
-  else if(k==="auto"||k==="hideQ"||k==="season") s[k] = !!v;
+  else if(k==="auto"||k==="hideQ"||k==="season"||k==="sfx"||k==="mute") s[k] = !!v;
+  else if(k==="vol"||k==="svol") s[k] = Math.max(0, Math.min(100, Math.round(+v||0)));
   else if(k==="son"){ s.son = ["auto","regie","ecran"].includes(v) ? v : "auto"; saveSettings(); renderHost(); pushDisplay(); return; }
   else if(/^prize[123]$/.test(k)){ const p = prizesOf(); p[+k[5]-1] = String(v||"").slice(0,60); s.prizes = p; }
   else if(k==="seenreset"){ SEEN.reset(); toast("Historique des questions remis à zéro"); renderHost(); return; }
@@ -2276,6 +2355,7 @@ function applySetting(k, v){
   else return;
   saveSettings();
   renderHost();
+  if(typeof pushDisplay==="function" && H.code) pushDisplay();
 }
 function quizInfo(){
   const s=H.settings, z = s.quiz!=="builtin" ? QZ.get(s.quiz) : null;
@@ -2317,7 +2397,7 @@ function adminState(){
   const q=H.qs[H.qi], counts=[0,0,0,0]; H.answers.forEach(a=>counts[a.choice]++);
   const r=ranking();
   const sd = SEASON.data();
-  return {t:"astate", code:H.code, phase:H.phase, view:H.view, settings:H.settings, paused:!!H.paused, snd:sndTarget(), nb:bank().length, info:quizInfo(), local:H.mode==="regie", pin:H.pin,
+  return {t:"astate", code:H.code, phase:H.phase, view:H.view, settings:H.settings, paused:!!H.paused, snd:sndTarget(), rsfx: H.phase==="reveal" && H.qs[H.qi] ? H.qs[H.qi].sfx||"" : "", nb:bank().length, info:quizInfo(), local:H.mode==="regie", pin:H.pin,
     season:{nom:sd.nom, bareme:sd.bareme, table:seasonTable(sd).slice(0,60).map(x=>({h:x.h,n:x.n,av:x.av,c:x.c,pts:x.pts,rank:x.rank,parties:x.parties})), joueurs:Object.entries(sd.joueurs).map(([h,j])=>({h,n:j.n}))},
     quizzes:QZ.all().map(z=>({id:z.id,name:z.name,n:z.qs.length})),
     players:r.map(p=>{ const a=H.answers.get(p.pid); return {pid:p.pid,hid:p.hid||"",name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0,season:p.season||null,ans:a?[Math.round(a.t/100),a.choice]:null}; }),
@@ -2449,7 +2529,8 @@ function renderRemote(){
       ${rTimes(st, rev)}
       <div class="rbar"><button class="btn big" id="nx">${rev ? (last?'Résultats finaux 🏆':st.board?'Classement ▶':'Question suivante ▶') : 'Dévoiler la réponse ▶'}</button>${pzBtn(st)}<button class="btn ghost sm" id="stop">⏹ Arrêter</button></div></div>`;
     const yre=$("#ytre"); if(yre) yre.onclick = () => rs({t:"cmd", c:"replay"});
-    if(!rev){ const el=$("#rt"); const tick=()=>{ const left=Math.max(0,A.endsAt-Date.now()); if(el) el.textContent=Math.ceil(left/1000)+" s"; if(left>0) A.raf=requestAnimationFrame(tick); };
+    if(!rev){ const el=$("#rt"), tickHere = A.local && sndTarget()==="regie" && !(st.q && st.q.yt), tickKey = "q|"+(H.gid||"")+"|"+st.qi;
+      const tick=()=>{ const left=Math.max(0,A.endsAt-Date.now()); if(el) el.textContent=Math.ceil(left/1000)+" s"; sfxTick(left, tickHere && !st.wait, tickKey); if(!st.wait) sfxGong(left, A.local && sndTarget()==="regie", tickKey); if(left>0) A.raf=requestAnimationFrame(tick); };
       if(st.wait){ if(el) el.textContent="⏳ en attente de l'extrait"; } else tick(); }
   }
   else if(st.phase==="leaderboard"){
@@ -2467,8 +2548,11 @@ function renderRemote(){
   const nx=$("#nx"); if(nx) nx.onclick = () => rs({t:"cmd", c:"advance"});
   const sp=$("#stop"); if(sp) sp.onclick = () => { if(confirm("Arrêter la partie et revenir à la salle d'attente ?")) rs({t:"cmd", c:"stop"}); };
   const pz=$("#pz"); if(pz) pz.onclick = () => rs({t:"cmd", c:"pause", on:!st.paused});
+  const sb=$("#sfxb"); if(sb) sb.onclick = () => rs({t:"set", k:"sfx", v:(st.settings||{}).sfx===false});
+  const mb=$("#muteb"); if(mb) mb.onclick = () => rs({t:"set", k:"mute", v:!(st.settings||{}).mute});
 }
-const pzBtn = st => st.settings && st.settings.auto ? `<button class="btn ${st.paused?'':'ghost'} sm" id="pz">${st.paused?'▶ Reprendre le défilement':'⏸ Pause'}</button>` : '';
+const pzBtn = st => (st.settings && st.settings.auto ? `<button class="btn ${st.paused?'':'ghost'} sm" id="pz">${st.paused?'▶ Reprendre le défilement':'⏸ Pause'}</button>` : '') + sndBtns(st);
+const sndBtns = st => { const s = st.settings||{}; return `<button class="btn ghost sm" id="sfxb" title="Bruitages">${s.sfx===false?'🔕 Bruitages coupés':'🔔 Bruitages'}</button><button class="btn ${s.mute?'':'ghost'} sm" id="muteb" title="Tout le son">${s.mute?'🔇 Son coupé':'🔊 Son'}</button>`; };
 /* Temps de réponse de chaque joueur pour la question en cours (régie / télécommande) */
 const fmtT = ds => (ds/10).toFixed(1).replace(".", ",") + " s";
 function rTimes(st, rev){
@@ -2720,7 +2804,8 @@ function onPData(d){
   if(d.pid && d.pid!==P.pid){ P.pid=d.pid; store.set("qb_pid_"+ROOM,d.pid); }
   const prev=P.st; P.st=d;
   if(d.phase==="question") P.endsAt = Date.now()+d.endsIn;
-  if(d.phase==="reveal" && !(prev&&prev.phase==="reveal"&&prev.qi===d.qi) && navigator.vibrate) navigator.vibrate(d.mine===d.correct?[60,40,60]:200);
+  // vibration au dévoilement : courte = gagné, longue = perdu (ou pas répondu)
+  if(d.phase==="reveal" && P.vibQ!==d.qi+"|"+d.total && navigator.vibrate){ P.vibQ = d.qi+"|"+d.total; try{ navigator.vibrate(d.mine!=null && d.mine===d.correct ? 120 : 700); }catch(e){} }
   renderPlayer();
 }
 function topBar(extra){ const s=P.st, pos = s.phase!=="lobby" && s.pos && s.players>1 ? `<span class="mypos" title="Ton classement">🏅 ${s.pos}<sup>${s.pos===1?'er':'e'}</sup>/${s.players}</span>` : '';
