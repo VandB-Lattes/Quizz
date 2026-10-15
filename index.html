@@ -1220,7 +1220,7 @@ const withYt = (item, x) => { const y = ytClean(x); if(y) Object.assign(item, y)
 const YTP = {p:null, pre:null, fp:null, fpre:null, api:null, key:"", box:null, cur:null, wt:0, preKey:"", started:false};
 /* blind test : l'extrait dure exactement le temps de réponse */
 const ytDur = () => (typeof H!=="undefined" && H.settings && +H.settings.time) || 20;
-const nxYt = () => { const n = typeof H!=="undefined" && H.qs ? H.qs[H.qi+1] : null; return n && n.yt ? {yt:n.yt, yt2:n.yt2||"", ys:n.ys||0, yd:ytDur()} : null; };
+const nxYt = () => { const n = typeof H!=="undefined" && H.qs ? H.qs[H.qi+1] : null; return n && n.yt ? {yt:n.yt, yt2:n.yt2||"", ys:n.ys||0, yd:ytDur(), dz:n.dz||null} : null; };
 function ytApi(){
   if(window.YT && YT.Player) return Promise.resolve();
   if(YTP.api) return YTP.api;
@@ -1257,7 +1257,7 @@ function sndUnlock(T){
 function ytPlace(){}   // son seul : le lecteur reste minuscule et invisible dans un coin
 window.addEventListener("resize", () => ytPlace());
 window.addEventListener("scroll", () => ytPlace(), {passive:true});
-function ytStop(){ dzStop(); YTP.want = false; clearInterval(YTP.mon); YTP.mon = 0; clearTimeout(YTP.wt); clearTimeout(YTP.ct); const g = $("#ytgo"); if(g) g.classList.add("hidden"); try{ YTP.p && YTP.p.pauseVideo && YTP.p.pauseVideo(); }catch(e){} if(YTP.box) YTP.box.classList.add("hidden"); YTP.key = ""; }
+function ytStop(){ dzStop(); clearTimeout(YTP.dzT); YTP.want = false; clearInterval(YTP.mon); YTP.mon = 0; clearTimeout(YTP.wt); clearTimeout(YTP.ct); const g = $("#ytgo"); if(g) g.classList.add("hidden"); try{ YTP.p && YTP.p.pauseVideo && YTP.p.pauseVideo(); }catch(e){} if(YTP.box) YTP.box.classList.add("hidden"); YTP.key = ""; }
 function ytSync(T){
   const here = T && T.ytHere!==false;
   YTP.vol = T && T.mute ? 0 : (T && T.vol!=null ? +T.vol : 100);
@@ -1298,7 +1298,7 @@ function ytState(pl, st){
 }
 /* l'extrait démarre vraiment (et pas une pub avant la vidéo) : on attend que la lecture soit dans la bonne plage */
 function ytContent(){
-  clearTimeout(YTP.ct); const c = YTP.cur, pl = YTP.p; if(!c || !pl) return;
+  clearTimeout(YTP.ct); const c = YTP.cur, pl = YTP.p; if(!c || !pl || !YTP.want) return;   // YouTube abandonné (Deezer joue) : on ignore un démarrage tardif
   let t = null, vid = null;
   try{ t = pl.getCurrentTime ? pl.getCurrentTime() : null; const vd = pl.getVideoData ? pl.getVideoData() : null; vid = vd && vd.video_id; }catch(_){}
   const inRange = t==null || (t >= c.s - 1.5 && t <= c.e + 1), same = !vid || vid === c.id;
@@ -1356,8 +1356,17 @@ function dzJsonp(q){
     document.head.appendChild(s);
   });
 }
-async function dzFind(dz){
-  if(!dz) return null;
+/* l'adresse de l'extrait Deezer est cherchée à l'avance (début de question, préchargement) : le secours démarre sans attendre */
+DZ.cache = {};
+function dzFind(dz){
+  if(!dz) return Promise.resolve(null);
+  const k = dz.join("|"), h = DZ.cache[k];
+  if(h && Date.now() - h.t < 10*60*1000) return h.p;
+  const p = dzFind1(dz); DZ.cache[k] = {t:Date.now(), p};
+  p.then(u => { if(!u) DZ.cache[k] = {t:Date.now() - 9*60*1000, p}; });   // pas trouvé : on réessaiera plus tard
+  return p;
+}
+async function dzFind1(dz){
   const a = dz[0].replace(/"/g,""), t = dz[1].replace(/"/g,"");
   for(const q of [(a && dz[2] ? `artist:"${a}" ` : "") + `track:"${t}"`, `${a} ${t}`]){
     const hit = (await dzJsonp(q)).find(x => dzMatch(x, dz)); if(hit) return hit.preview;
@@ -1387,6 +1396,7 @@ function dzStop(){ dzBadge(false); DZ.want = false; clearTimeout(DZ.end); const 
 function ytErr(pl){ if(pl === YTP.pre){ YTP.preKey = ""; return; } ytFallback(); }
 async function ytPreload(n, cueOnly){
   const c = {id:n.yt, s:n.ys||0, e:(n.ys||0)+(n.yd||20)}, k = c.id+"|"+c.s, mode = cueOnly ? "cue" : "buf";
+  if(n.dz) dzFind(n.dz);
   if(YTP.preKey === k && (YTP.preMode === "buf" || mode === "cue")) return;
   if(YTP.preKey === k && YTP.pre && typeof YTP.pre.playVideo === "function"){   // déjà préparée : on passe à la mise en mémoire (lecture muette)
     YTP.preMode = "buf"; YTP.preT0 = Date.now(); try{ YTP.pre.mute(); YTP.pre.playVideo(); }catch(e){} return; }
@@ -1409,7 +1419,7 @@ function ytPreCheck(pl){
 function ytPreStop(){ clearTimeout(YTP.pct); YTP.preKey = ""; YTP.preOk = false; YTP.preMode = ""; try{ YTP.pre && YTP.pre.pauseVideo && YTP.pre.pauseVideo(); YTP.pre && YTP.pre.mute && YTP.pre.mute(); }catch(_){} }
 async function ytPlay(){
   const c = YTP.cur; if(!c) return;
-  YTP.started = false; dzStop();
+  YTP.started = false; dzStop(); clearTimeout(YTP.dzT);
   if(c.dzo && c.dz){ c.dzTried = true; if(YTP.pre) ytPreStop(); try{ YTP.p && YTP.p.pauseVideo && YTP.p.pauseVideo(); }catch(e){}
     if(!(await dzPlay(c)) && YTP.cur === c) ytGiveUp(true, true); return; }
   try{ await ytApi(); YTP.apiTry = 0; }catch(e){
@@ -1430,18 +1440,36 @@ async function ytPlay(){
     try{ op && op.mute && op.mute(); }catch(e){}
     try{ YTP.p.unMute(); YTP.p.setVolume(YTP.vol==null?100:YTP.vol); YTP.p.seekTo(c.s, true); YTP.p.playVideo(); }catch(e){}
     try{ if(YTP.p.getPlayerState && YTP.p.getPlayerState()===1) ytContent(); }catch(e){}
-    ytWatch(); ytMonStart(); return;
+    ytWatch(); ytMonStart(); ytDzTimer(c); if(c.dz) dzFind(c.dz); return;
   }
   if(YTP.pre) ytPreStop();   // préchargement pas terminé (ou autre extrait) : on l'arrête pour ne pas gêner
   YTP.want = true; YTP.relaunch = 0;
   if(!YTP.p) YTP.p = ytNew(YTP.fp.firstElementChild, c, false);
   else { try{ YTP.p.loadVideoById({videoId:c.id, startSeconds:c.s}); YTP.p.unMute(); }catch(e){} ytWatch(); }
-  ytMonStart();
+  ytMonStart(); ytDzTimer(c);
+  if(c.dz) dzFind(c.dz);
 }
 function ytFallback(){
   const c = YTP.cur;
   if(c && c.alt && c.id !== c.alt){ c.id = c.alt; c.alt = ""; YTP.stall = 0; YTP.reload = 0; try{ YTP.p.loadVideoById({videoId:c.id, startSeconds:c.s}); }catch(e){} ytWatch(); return; }
   ytGiveUp(true);
+}
+/* YouTube ne démarre pas en 5 s (chargement, pub, blocage…) : secours Deezer ; si Deezer n'a pas la chanson, YouTube continue d'essayer */
+const YT_DZ_MS = 5000;
+function ytDzTimer(c){
+  clearTimeout(YTP.dzT); if(!c || !c.dz || c.dzTried) return;
+  YTP.dzT = setTimeout(() => { if(YTP.cur === c && !YTP.started && !c.dzTried && YTP.want) ytSlow(c); }, YT_DZ_MS);
+}
+function ytSlow(c){
+  c.dzTried = true; const pl = YTP.p;
+  YTP.want = false; clearInterval(YTP.mon); YTP.mon = 0; clearTimeout(YTP.wt); clearTimeout(YTP.ct);
+  try{ pl && pl.pauseVideo && pl.pauseVideo(); pl && pl.mute && pl.mute(); }catch(e){}
+  if(typeof H!=="undefined" && H.code) toast("🎵 YouTube ne démarre pas : secours Deezer");
+  dzPlay(c).then(ok => {
+    if(ok || YTP.cur !== c || YTP.started) return;
+    YTP.want = true; try{ pl.unMute(); pl.setVolume(YTP.vol==null?100:YTP.vol); pl.playVideo(); }catch(e){} ytWatch(); ytMonStart();
+    try{ if(pl.getPlayerState()===1) ytContent(); }catch(e){}
+  });
 }
 function ytGiveUp(bad, noDz){
   const c = YTP.cur; YTP.want = false; clearInterval(YTP.mon); YTP.mon = 0; clearTimeout(YTP.wt);
