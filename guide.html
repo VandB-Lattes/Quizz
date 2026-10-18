@@ -113,7 +113,7 @@ td{color:var(--muted)}
   <section id="lancer">
     <h2><span class="n">3</span>Lancer la partie</h2>
     <p class="tip">🍷 <b>Staff VandB</b> : identifiez-vous avec le nom <b>« VandB »</b> (accueil → 👤 Identifiez-vous ; tout le staff utilise ce nom) : parties du bar et classement de la saison retrouvés sur n'importe quel appareil. <b>Sauvegarde automatique</b> : le responsable crée une fois un <b>code staff</b> (accueil → 🛠️ Créer / modifier mes quiz → ☁️ Réglages de la sauvegarde → « Activer pour le staff ») ; sur chaque nouvel appareil, cliquez « ☁️ Activer la sauvegarde automatique » sur l'accueil et tapez ce code, une seule fois.</p>
-    <p>🏠 Accueil : <span class="ui">📺 Lancer la partie</span>, juste dessous <span class="ui">🛠️ Créer / modifier mes quiz</span>, puis <span class="ui">🏆 Classement de la saison</span>. Le menu <span class="ui">☰ Plus d'options</span> contient le mode écran unique (tablette), Mes parties et la télécommande animateur.</p>
+    <p>🏠 Accueil : <span class="ui">📺 Lancer la partie</span>, juste dessous <span class="ui">🛠️ Créer / modifier mes quiz</span>, puis <span class="ui">🏆 Classement de la saison</span>. <span class="ui">🤖 Libre-service</span> lance une partie qui tourne toute seule, sans animateur (voir C ci-dessous). Le menu <span class="ui">☰ Plus d'options</span> contient le mode écran unique (tablette), Mes parties et la télécommande animateur.</p>
     <p>👤 <b>Identifiez-vous</b> sur l'accueil avec votre prénom d'animateur. Sur n'importe quel appareil, <span class="ui">📂 Mes parties</span> avec le même nom affiche vos parties (en cours ou terminées, avec le podium) et permet de <b>reprendre</b> une partie en cours sur un autre appareil. Nécessite la sauvegarde en ligne (jeton GitHub) sur l'appareil qui lance les parties.</p>
     <div class="two">
       <div class="card">
@@ -135,6 +135,21 @@ td{color:var(--muted)}
       </div>
     </div>
     <div class="card">
+      <h3>C · Libre-service : sans animateur 🤖</h3>
+      <ol class="steps">
+        <li>Sur l'ordinateur, la tablette ou la Smart TV branché(e) à l'écran : Accueil → <span class="ui">🤖 Libre-service (sans animateur)</span>. Astuce : mettez en favori l'adresse du site suivie de <b>?libre</b> (ex. <code>…/Quizz/?libre</code>) : la TV démarre directement en libre-service et <b>reprend la partie en cours</b> après un redémarrage.</li>
+        <li>Appuyez <b>une fois</b> sur OK (ou cliquez) dans la page : sans ce geste, le navigateur bloque le son du blind test. Si le bouton « 🔊 autoriser le son » s'affiche, il est déjà sélectionné : OK suffit.</li>
+        <li>Les clients scannent le QR code et appuient sur <b>✋ Je suis prêt</b> sur leur téléphone. La TV affiche « Joueurs prêts : 2 / 3 ». <b>Quand tous les joueurs connectés sont prêts</b> (2 joueurs minimum par défaut), la partie démarre 5 s plus tard. Un joueur peut annuler son « prêt » tant que la partie n'a pas commencé.</li>
+        <li>Les questions s'enchaînent toutes seules. À la fin : podium et classement de la saison, puis <b>retour automatique</b> en salle d'attente : chacun réappuie sur ✋ Je suis prêt pour la partie suivante.</li>
+        <li>Par défaut, les parties <b>alternent quiz et blind test</b> (toutes catégories, questions jamais vues en priorité). Plus aucun joueur connecté pendant 1 min : retour en salle d'attente.</li>
+      </ol>
+      <p class="tip">Réglages ⚙️ (ou télécommande) → rubrique <b>🤖 Libre-service</b> : nombre de joueurs minimum, <b>questions par quiz</b> (15 par défaut), <b>extraits par blind test</b> (10 par défaut), type de parties (alternance, quiz, blind test ou votre quiz), durée de l'écran de fin. Le staff peut toujours lancer, mettre en pause ou arrêter depuis la télécommande.</p>
+    </div>
+    <div class="card">
+      <h3>📺 Télécommande de la TV</h3>
+      <p>Sur une Smart TV (ou un ordinateur sans souris), les <b>flèches</b> passent <b>de bouton en bouton</b> (le bouton choisi est entouré d'orange), <b>OK</b> clique, <b>Retour</b> ferme la fenêtre de réglages. Sur une liste de choix (nombre de questions, joueurs…), <b>◀ ▶</b> changent la valeur. Les réglages ⚙️ sont en haut à droite de l'écran.</p>
+    </div>
+    <div class="card">
       <h3>Télécommande sur votre téléphone</h3>
       <p>Dans la régie : <span class="ui">🎛️ Télécommande</span> → scannez le QR code avec votre téléphone (le PIN est rempli tout seul). Sinon, Accueil → <span class="ui">🎛️ Télécommande animateur</span>, saisissez le code de la partie puis le PIN affiché dans ⚙️ Réglages. Vous pouvez lancer, avancer, voir la bonne réponse avant tout le monde et exclure un joueur.</p>
     </div>
@@ -149,13 +164,14 @@ td{color:var(--muted)}
       <li>À la fin du chrono (ou plus tôt) : <span class="ui">Dévoiler ▶</span>. Lisez la bonne réponse et l'anecdote 💡 s'il y en a une. La régie affiche le <b>temps de réponse de chaque joueur</b> (⚡ = le plus rapide, ✓/✗ et points gagnés).</li>
       <li>⏭ Les questions <b>défilent toutes seules</b> : 5 secondes après chaque réponse dévoilée, la suivante arrive. Besoin de parler au micro ? <span class="ui">⏸ Pause</span> (régie, télécommande, ou touche P) arrête le défilement ; <span class="ui">▶ Reprendre le défilement</span> repart. Les boutons restent utilisables pour avancer à la main.</li>
       <li>🔔 <b>Bruitages</b> : tic-tac sur les 5 dernières secondes, gong à la fin du temps, « boing » quand un seul joueur s'est trompé, trombone quand personne n'a trouvé, ⚡ éclair pour le joueur le plus rapide puis roulement de tambour au classement, acclamations au podium. Ils sortent au même endroit que le blind test (régie ou écran casté), jamais par-dessus un extrait. Boutons <span class="ui">🔔 Bruitages</span> et <span class="ui">🔊 Son</span> dans la régie pour couper ; volumes séparés (extraits / bruitages) dans ⚙️. Les téléphones vibrent : court = gagné, long = perdu.</li>
+      <li>🏅 <b>Podium en direct</b> : pendant les questions, réponses et classements (quiz et blind test), le haut de la TV affiche au centre les 3 premiers de la partie avec 🥇🥈🥉 (dès qu'ils ont des points).</li>
       <li><span class="ui">Question suivante ▶</span>. Le <b>classement s'affiche tout seul toutes les 5 questions</b> (bouton <span class="ui">Classement ▶</span> à ces moments-là). À la dernière question : la TV alterne en boucle le <b>podium</b> (15 s) et le <b>classement de la saison</b> (15 s, joueurs du soir signalés), jusqu'à <span class="ui">Nouvelle partie</span>.</li>
-      <li>📱 Côté joueurs : dès qu'ils rejoignent, le téléphone passe <b>en plein écran, en portrait</b> (plus de barre d'adresse). Sur iPhone, Safari ne le permet pas : la barre reste visible, sauf avec l'appli ajoutée à l'écran d'accueil.</li>
+      <li>📱 Côté joueurs : dès qu'ils rejoignent, le téléphone passe <b>en plein écran, en portrait</b> (plus de barre d'adresse). Sur iPhone, Safari ne le permet pas : la barre reste visible, sauf avec l'appli ajoutée à l'écran d'accueil. Dans la salle d'attente, le <b>logo VandB Quizz</b> s'affiche en haut à droite de l'écran joueur.</li>
       <li>😅 Quand <b>un seul joueur</b> s'est trompé et que tous les autres ont trouvé, l'écran TV affiche son nom avec une petite vanne gentille pendant quelques secondes.</li>
       <li>En fin de partie, dans la régie : <span class="ui">⏱️ Temps de réponse de toute la partie</span> = tableau joueur par joueur, question par question.</li>
       <li>📱 Pendant toute la partie, un <b>petit QR code</b> reste affiché en bas à droite de la TV avec le code de la partie : un client qui a perdu la connexion (téléphone verrouillé, batterie, page fermée) le scanne et revient avec ses points.</li>
     </ol>
-    <p>Raccourcis sur l'ordinateur : <kbd>Espace</kbd>, <kbd>Entrée</kbd> ou <kbd>→</kbd> = étape suivante. Double-clic sur l'écran = plein écran.</p>
+    <p>Raccourcis sur l'ordinateur : <kbd>Espace</kbd> ou <kbd>Entrée</kbd> (aucun bouton sélectionné) = étape suivante ; les flèches servent à passer de bouton en bouton. Double-clic sur l'écran = plein écran.</p>
     <div class="two">
       <div class="card"><h3>Points de la partie</h3><p>Bonne réponse : <b>500 à 1 000 points</b> selon la rapidité, plus <b>50 par bonne réponse d'affilée</b> (jusqu'à +150). Mauvaise réponse ou pas de réponse : 0.</p></div>
       <div class="card"><h3>Gérer les joueurs</h3><ul><li>Pseudo déplacé : cliquez sur le pseudo dans la salle d'attente ou la régie → <b>Exclure</b>.</li><li>Téléphone coupé ou page rechargée : le joueur revient tout seul avec ses points (ou rescanne le petit QR code en bas à droite de la TV).</li><li>Ordinateur redémarré : Accueil → <span class="ui">♻️ Reprendre la partie</span> (pendant 6 h).</li></ul></div>

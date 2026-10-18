@@ -570,6 +570,29 @@ body::before{background:linear-gradient(90deg,var(--wine) 0 25%,var(--gold) 25% 
 .scrch .btn small{font-weight:500;font-size:.8em;opacity:.8;text-transform:none;letter-spacing:0}
 .admin-side img.logo{cursor:pointer}.admin-side .home img.logo{cursor:default}
 .ph-top img.logo.mini{height:34px;width:auto}
+.tv-head{position:relative}
+.tvpod{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:.6em;align-items:center;max-width:56%;pointer-events:none}
+.tvpod-p{display:inline-flex;align-items:center;gap:.3em;background:var(--cream,#fff8ee);border:2px solid var(--pc);border-radius:999px;padding:.2em .8em .2em .4em;font-weight:800;font-size:1.25em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16em;box-shadow:0 3px 12px rgba(29,23,20,.12);color:var(--ink,#1d1714)}
+.tvpod-p b{font-size:1.2em}
+/* télécommande de TV : bouton sélectionné bien visible */
+html.kbnav :focus{outline:5px solid #f7a325!important;outline-offset:4px;box-shadow:0 0 0 9px rgba(247,163,37,.35)!important;position:relative;z-index:5}
+html.kbnav select:focus,html.kbnav input:focus{outline-offset:2px}
+html.kbnav label.tg:focus-within,html.kbnav label.vol:focus-within{outline:5px solid #f7a325;outline-offset:3px;border-radius:8px}
+html.kbnav label.tg input:focus,html.kbnav label.vol input:focus{outline:none!important;box-shadow:none!important}
+/* libre-service */
+.lfree{display:flex;flex-direction:column;gap:.3em;align-items:center;text-align:center;border:3px solid var(--acc,#e8551f);border-radius:18px;padding:.7em 1em;margin:.4em 0 .8em;background:rgba(232,85,31,.08);font-weight:600;line-height:1.3}
+.lfree .lk{font-size:.95em;opacity:.85}
+.lfree .lm{font-size:1.5em;font-weight:800}
+.lfree .lh{font-size:.9em;opacity:.8}
+.lfree.on{background:rgba(46,168,98,.12);border-color:#2ea862}
+.lfree.on .lcd,.lfree.on [data-cd]{font-size:1.25em;color:#2ea862;font-variant-numeric:tabular-nums}
+.lfree.go{border-style:dashed}
+.ph .lfree{display:block;margin:1em auto .6em;max-width:22em;font-size:1.05rem}
+.ph .lfree.on{font-size:1.3rem}
+.rdyb{display:block;margin:0 auto 1em;min-width:14em;font-size:1.2rem}
+.chip .rdy{margin-left:.2em}
+.lfree-end{font-weight:700;font-size:1.2em;opacity:.85}
+.ph-top img.plogo{height:56px;width:auto;display:block;flex:none;margin:-6px 0}
 .mypos{font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap}.mypos sup{font-size:.7em}
 .lb .row.lead{animation:slide .45s both, leadpop .7s both}
 @keyframes leadpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
@@ -787,6 +810,7 @@ function home(){
     <div class="stack">
       ${canResume?`<button class="btn" id="resume">♻️ Reprendre la partie (code ${esc(sv.code)}, ${sv.players.length} joueurs)</button>`:''}
       <button class="btn ${canResume?'ghost':''}" id="host">📺 ${canResume?'Nouvelle partie':'Lancer la partie (animateur)'}</button>
+      <button class="btn ghost" id="libre">🤖 Libre-service (sans animateur)</button>
       <button class="btn ghost" id="edq">🛠️ Créer / modifier mes quiz</button>
       <button class="btn ghost" id="ssn">🏆 Classement de la saison</button>
       <details class="more-menu" id="mmenu"><summary class="btn ghost">☰ Plus d'options</summary>
@@ -806,6 +830,7 @@ function home(){
   </div></div>`;
   $("#host").onclick = () => chooseScreen(() => store.del(SAVE_KEY));
   $("#solo").onclick = () => { goFS(); store.del(SAVE_KEY); startHost(null, "ecran"); };
+  $("#libre").onclick = () => { goFS(); store.del(SAVE_KEY); H.libre = true; startHost(null, "ecran"); };
   $("#ssn").onclick = () => seasonPage(false);
   $("#mgp").onclick = gamesPage; $("#aid").onclick = () => askAdminName(home);
   if($("#iostip")) $("#iostip").onclick = iosFsGuide;
@@ -818,7 +843,7 @@ function home(){
 }
 
 /* ===================== HÔTE (ÉCRAN TV) ===================== */
-const DEFAULTS = {n:15, time:20, cats:Object.keys(CATS), themes:null, auto:true, bar:"V and B", hideQ:true, quiz:"builtin", season:true, prizes:["","",""]};
+const DEFAULTS = {n:15, time:20, cats:Object.keys(CATS), themes:null, auto:true, bar:"V and B", hideQ:true, quiz:"builtin", season:true, prizes:["","",""], lmin:2, lnq:15, lnb:10, lmix:"alt", lend:60};
 const H = {
   peer:null, code:"", players:new Map(), phase:"lobby",
   settings: (() => { const st = Object.assign({}, DEFAULTS, store.get("qb_settings", {})); if(!st.autoV2){ st.auto = true; st.autoV2 = 1; store.set("qb_settings", st); } return st; })(),
@@ -848,7 +873,7 @@ const boardDue = () => (H.qi+1) % 5 === 0;
 const joinUrl = () => location.origin + location.pathname + "?room=" + H.code;
 
 function saveGame(){
-  store.set(SAVE_KEY, {at:Date.now(), code:H.code, phase:H.phase, qs:H.qs, qi:H.qi, src:H.src, mode:H.mode, gid:H.gid, seasonDone:H.seasonDone,
+  store.set(SAVE_KEY, {at:Date.now(), code:H.code, phase:H.phase, qs:H.qs, qi:H.qi, src:H.src, mode:H.mode, gid:H.gid, seasonDone:H.seasonDone, libre:!!H.libre, lnext:H.lnext||"", lkind:H.lkind||"",
     elapsed: H.phase==="question" && !H.ytWait ? Date.now()-H.qStart : 0, ytWait: H.phase==="question" && H.ytWait,
     answers:[...H.answers], lastGain:[...H.lastGain],
     players:[...H.players.values()].map(p=>({pid:p.pid,hid:p.hid,name:p.name,av:p.av,col:p.col,score:p.score,streak:p.streak,nAns:p.nAns||0,nOk:p.nOk||0,maxStreak:p.maxStreak||0,season:p.season}))});
@@ -894,8 +919,8 @@ async function startHost(resume, mode){
   if(!startHost._bound){
     startHost._bound = true;
     document.addEventListener("keydown", e => {
-      if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || $(".modal")) return;
-      if(e.code==="Space"||e.key==="Enter"||e.key==="ArrowRight"){ e.preventDefault(); advance(); }
+      if(/^(INPUT|SELECT|TEXTAREA|BUTTON|A|SUMMARY)$/.test(e.target.tagName) || $(".modal")) return;
+      if(e.code==="Space"||e.key==="Enter"){ e.preventDefault(); advance(); }
       if((e.key==="r"||e.key==="R") && H.mode==="ecran") openHostSettings();
       if((e.key==="p"||e.key==="P") && H.phase!=="lobby" && H.phase!=="end") togglePause();
     });
@@ -907,6 +932,7 @@ async function startHost(resume, mode){
 function setNet(){ if(H.code) pushDisplay(); }
 
 function restore(sv){
+  H.libre = !!sv.libre; H.lnext = sv.lnext||""; H.lkind = sv.lkind||""; H.lgo = H.libre && sv.phase!=="lobby";
   H.phase = sv.phase; H.qs = sv.qs||[]; H.src = sv.src||""; H.gid = sv.gid||""; H.seasonDone = sv.seasonDone||""; H.qi = sv.qi; H.answers = new Map(sv.answers||[]); H.lastGain = new Map(sv.lastGain||[]);
   H.players = new Map((sv.players||[]).map(p=>[p.pid, Object.assign({}, p, {connected:false, conn:null})]));
   if(H.phase==="question" && sv.ytWait){ H.ytWait = true; H.qStart = Date.now(); H.timeout = setTimeout(ytNoStart, 30000); startSaveLoop(); }
@@ -918,6 +944,7 @@ function restore(sv){
   }
   renderHost(); toast("Partie reprise — les téléphones se reconnectent automatiquement");
   if(H.phase==="reveal"||H.phase==="leaderboard") autoNext();
+  if(H.libre){ if(H.phase==="lobby"){ H.qi = -1; libreTick(); } else if(H.phase==="end") libreEnd(); }
 }
 
 function hostData(conn, d){
@@ -960,6 +987,7 @@ function hostData(conn, d){
     pushDisplay();
     if(H.answers.size >= connectedCount()) setTimeout(()=>{ if(H.phase==="question") reveal(); }, 400);
   }
+  else if(d.t==="ready"){ const p = H.players.get(conn.pid); if(!p || H.phase!=="lobby") return; p.ready = !!d.on; libreTick(true); }
   else if(d.t==="ping"){ try{ conn.send({t:"pong"}); }catch(e){} }
   else if(d.t==="getseason"){ try{ const sd=SEASON.data(), hid=typeof d.hid==="string"?d.hid.slice(0,16):""; conn.send({t:"season", nom:sd.nom, at:Date.now(), table:seasonTable().slice(0,100).map(x=>({h:x.h,n:x.n,av:x.av,c:x.c,pts:x.pts,rank:x.rank,parties:x.parties})), hist: hid ? sd.mv.filter(x=>x.h===hid).slice(-40) : []}); }catch(e){} }
 }
@@ -972,13 +1000,14 @@ function ranking(){
   return arr;
 }
 function onRosterChange(){
-  renderHost();
+  renderHost(); if(H.libre){ libreTick(H.phase==="lobby"); libreWatch(); }
   if(H.phase==="question" && H.answers.size>0 && H.answers.size >= connectedCount()) reveal();
 }
 
 function playerState(p){
   const s = {t:"state", pid:p.pid, name:p.name, av:p.av, col:p.col, phase:H.phase, score:p.score, players:H.players.size, bar:H.settings.bar,
     season: H.settings.season ? (p.season || seasonOf(p.hid)) : null, seasonName: SEASON.data().nom};
+  if(H.libre && H.phase==="lobby") s.libre = Object.assign(libreInfo(), {ready:!!p.ready});
   const q = H.qs[H.qi];
   if(H.phase==="question"){
     Object.assign(s,{qi:H.qi,total:H.qs.length,cat:q.c,alc:!!q.alc,blind:!!q.yt,pic:!!q.img,text:H.settings.hideQ?null:q.q,choices:q.choices,
@@ -997,19 +1026,78 @@ function playerState(p){
 }
 
 /* --- déroulé de partie --- */
+/* ===================== LIBRE-SERVICE : partie sans animateur =====================
+   La TV héberge la partie seule : départ automatique quand assez de joueurs sont là (compte à rebours,
+   raccourci si tout le monde est « prêt »), quiz et blind test en alternance, retour automatique en salle d'attente. */
+const LGO_MS = 5000;
+const LKIND = {quiz:"🧠 Quiz", bt:"🎵 Blind test", set:"🎲 Partie"};
+const effKind = () => !H.libre ? "set" : ((H.phase==="lobby" && !H.lgo ? H.lnext : H.lkind) || H.lnext || "set");
+const curQuiz = () => effKind()==="set" && H.settings.quiz!=="builtin" ? QZ.get(H.settings.quiz) : null;
+const curThemes = () => { const k = effKind();
+  if(k==="bt") return ALL_THEMES().filter(t => isBlindTheme(t) && !ALC_THEMES.includes(t));
+  if(k==="quiz") return themesOf({cats:Object.keys(CATS)});
+  return themesOf(H.settings); };
+const curN = () => { const k = effKind(); return k==="quiz" ? (H.settings.lnq || 15) : k==="bt" ? (H.settings.lnb || 10) : H.settings.n; };
+function libreInit(){ const m = H.settings.lmix || "alt"; if(m!=="alt") H.lnext = m; else if(H.lnext!=="quiz" && H.lnext!=="bt") H.lnext = "quiz"; }
+function libreInfo(){
+  const n = connectedCount(), min = H.settings.lmin || 2;
+  return {cd: H.lcd ? Math.max(0, H.lcd - Date.now()) : null, need: Math.max(0, min - n), n, next: LKIND[H.lnext] || LKIND.set, go: !!H.lgo,
+    ready: [...H.players.values()].filter(p => p.connected && p.ready).length};
+}
+/* salle d'attente : lance / annule / raccourcit le compte à rebours */
+function libreTick(force){
+  if(!H.libre) return;
+  libreInit();
+  if(H.phase!=="lobby" || H.lgo){ if(force){ broadcast(); pushDisplay(); } return; }
+  const n = connectedCount(), now = Date.now();
+  let end = 0;
+  if(n >= (H.settings.lmin || 2)){
+    const here = [...H.players.values()].filter(p => p.connected);
+    if(here.length && here.every(p => p.ready)) end = H.lcd || now + LGO_MS;   // tout le monde est prêt : départ dans 5 s
+  }
+  const changed = end !== H.lcd;
+  if(changed){ H.lcd = end; clearTimeout(H.lcdT); if(end) H.lcdT = setTimeout(() => libreGo(), Math.max(0, end - now)); }
+  if(changed || force){ broadcast(); pushDisplay(); sendAdmins(); }
+}
+function libreGo(force){
+  clearTimeout(H.lcdT); H.lcd = 0;
+  if(!H.libre || H.phase!=="lobby" || H.lgo) return;
+  if(!force && (connectedCount() < (H.settings.lmin || 2) || [...H.players.values()].some(p => p.connected && !p.ready))) return libreTick(true);
+  libreInit();
+  H.lkind = H.lnext || "quiz";
+  if((H.settings.lmix || "alt")==="alt") H.lnext = H.lkind==="quiz" ? "bt" : "quiz";
+  H.lgo = true; H.qs = [];
+  startGame();
+  if(!H.qs.length){ H.lgo = false; toast("🤖 Libre-service : aucune question disponible, nouvel essai dans 30 s"); H.lcdT = setTimeout(() => libreTick(true), 30000); }
+  broadcast(); pushDisplay();
+}
+/* fin de partie : podium et saison quelques instants, puis retour en salle d'attente */
+function libreEnd(){
+  clearTimeout(H.libT); if(!H.libre || H.phase!=="end") return;
+  const ms = (H.settings.lend || 60) * 1000; H.lendAt = Date.now() + ms;
+  H.libT = setTimeout(() => { if(H.libre && H.phase==="end") backToLobby(); }, ms);
+}
+/* plus personne de connecté pendant la partie : retour en salle d'attente au bout d'une minute */
+function libreWatch(){
+  clearTimeout(H.lemT);
+  if(!H.libre || !["question","reveal","leaderboard"].includes(H.phase) || connectedCount() > 0) return;
+  H.lemT = setTimeout(() => { if(H.libre && connectedCount()===0 && ["question","reveal","leaderboard"].includes(H.phase)){ toast("🤖 Plus aucun joueur : retour à la salle d'attente"); backToLobby(); } }, 60000);
+}
 function buildPool(){
-  const s = H.settings, z = s.quiz!=="builtin" ? QZ.get(s.quiz) : null;
+  const s = H.settings, z = curQuiz();
   if(z) return z.shuffle ? SEEN.order(shuffle(z.qs)) : z.qs.slice();
-  const th = new Set(themesOf(s));
+  const th = new Set(curThemes());
   return SEEN.order(shuffle(bank().filter(q => th.has(q[0]+"/"+q[1])).map(x => Object.assign(bankQ(x), {alc:ALC_THEMES.includes(x[0]+"/"+x[1])||isAlc({q:x[2],a:x[3]})}))));
 }
 function startGame(){
   if(H.preparing) return;
+  if(H.libre && !H.lgo && H.phase==="lobby") return libreGo(true);   // lancement manuel en libre-service
+  clearTimeout(H.lcdT); H.lcd = 0;
   const pool = buildPool();
   if(!pool.length){ toast("Aucune question : choisis des catégories ou un quiz qui contient des questions"); return; }
-  const zq = H.settings.quiz!=="builtin" ? QZ.get(H.settings.quiz) : null; H.src = (zq && zq.source) || "";
-  const picked = pool.slice(0, H.settings.n || pool.length);
-  const zs = H.settings.quiz!=="builtin" ? QZ.get(H.settings.quiz) : null;
+  const zq = curQuiz(); H.src = (zq && zq.source) || "";
+  const picked = pool.slice(0, curN() || pool.length);
+  const zs = zq;
   if(!zs || zs.shuffle) SEEN.mark(picked);   // un quiz « dans l'ordre » se rejoue tel quel
   H.qs = (!zs || zs.shuffle ? shuffle(picked) : picked).map(({c,q,a,info,alc,yt,ys,yd,yt2,img,dz}) => {
     const order = shuffle(a.map((_,i)=>i));
@@ -1095,7 +1183,7 @@ function reveal(){
 }
 /* enchaînement automatique : 5 s entre deux questions, sauf si l'animateur a mis en pause */
 const AUTO_GAP = 5000;
-function autoNext(){ clearTimeout(H.autoT); if(H.settings.auto && !H.paused && (H.phase==="reveal"||H.phase==="leaderboard")) H.autoT = setTimeout(advance, H.phase==="leaderboard" ? AUTO_GAP + 3000 + (H.zap ? ZAP_MS : 0) : AUTO_GAP); }
+function autoNext(){ clearTimeout(H.autoT); if((H.settings.auto || H.libre) && !H.paused && (H.phase==="reveal"||H.phase==="leaderboard")) H.autoT = setTimeout(advance, H.phase==="leaderboard" ? AUTO_GAP + 3000 + (H.zap ? ZAP_MS : 0) : AUTO_GAP); }
 function togglePause(on){
   H.paused = on==null ? !H.paused : !!on;
   if(H.paused) clearTimeout(H.autoT); else autoNext();
@@ -1142,9 +1230,9 @@ function zapOf(){
 }
 function showBoard(){ clearTimers(); H.zap = zapOf(); H.phase="leaderboard"; broadcast(); renderHost(); saveGame(); autoNext(); }
 function endGame(){
-  clearTimers(); H.phase="end"; applySeason(); broadcast(); renderHost(); saveGame();
+  clearTimers(); H.phase="end"; applySeason(); libreEnd(); broadcast(); renderHost(); saveGame();
 }
-function backToLobby(){ clearTimers(); H.phase="lobby"; H.view=""; H.qi=-1; H.players.forEach(p=>{p.score=0;p.streak=0}); [...H.players].forEach(([id,p])=>{ if(!p.connected) H.players.delete(id); }); broadcast(); renderHost(); saveGame(); }
+function backToLobby(){ clearTimers(); clearTimeout(H.libT); clearTimeout(H.lemT); H.lgo=false; H.lendAt=0; H.phase="lobby"; H.view=""; H.qi=-1; H.players.forEach(p=>{p.score=0;p.streak=0;p.ready=false}); [...H.players].forEach(([id,p])=>{ if(!p.connected) H.players.delete(id); }); broadcast(); renderHost(); saveGame(); libreTick(); }
 function advance(){
   if(H.phase==="question") reveal();
   else if(H.phase==="reveal") (H.qi >= H.qs.length-1) ? endGame() : boardDue() ? showBoard() : nextQuestion();
@@ -1253,6 +1341,7 @@ function sndUnlock(T){
   b.textContent = "🔊 Cliquez une fois ici pour autoriser le son des extraits";
   b.onclick = () => { try{ const a = new Audio(SILENT_WAV); a.play().catch(()=>{}); }catch(e){} b.remove(); };
   document.body.appendChild(b);
+  try{ b.focus({preventScroll:true}); }catch(e){}
 }
 function ytPlace(){}   // son seul : le lecteur reste minuscule et invisible dans un coin
 window.addEventListener("resize", () => ytPlace());
@@ -1983,8 +2072,9 @@ function displayState(){
   const counts=[0,0,0,0]; H.answers.forEach(a=>counts[a.choice]++);
   const r=ranking(), q=H.qs[H.qi], showCorrect = H.phase==="reveal" || H.phase==="leaderboard";
   return {t:"dstate", code:H.code, url:joinUrl(), phase:H.phase, view:H.view||"", online:H.online, turn:HAS_TURN, info:quizInfo(), src:H.src||"",
-    time:H.settings.time, ctl:H.mode==="ecran", auto:!!H.settings.auto, paused:!!H.paused, gid:H.gid||"", sfx:H.settings.sfx!==false, mute:!!H.settings.mute, vol:H.settings.vol==null?100:H.settings.vol, svol:H.settings.svol==null?80:H.settings.svol, zap: H.phase==="leaderboard" ? H.zap||null : null, rsfx: H.phase==="reveal" && q ? q.sfx||"" : "",
-    players:r.map(p=>({pid:p.pid,name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0})),
+    time:H.settings.time, ctl:H.mode==="ecran", auto:!!(H.settings.auto || H.libre),
+    libre: H.libre ? Object.assign(libreInfo(), {end: H.phase==="end" && H.lendAt ? Math.max(0, H.lendAt - Date.now()) : null}) : null, paused:!!H.paused, gid:H.gid||"", sfx:H.settings.sfx!==false, mute:!!H.settings.mute, vol:H.settings.vol==null?100:H.settings.vol, svol:H.settings.svol==null?80:H.settings.svol, zap: H.phase==="leaderboard" ? H.zap||null : null, rsfx: H.phase==="reveal" && q ? q.sfx||"" : "",
+    players:r.map(p=>({pid:p.pid,name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0,rd:!!p.ready})),
     qi:H.qi, total:H.qs.length, q: q ? {c:q.c, q:q.q, info:q.info||"", alc:!!q.alc, yt:q.yt||"", yt2:q.yt2||"", ys:q.ys||0, yd:ytDur(), dz:q.dz||null, dzo:!!q.dzo, img:q.img||"", choices:q.choices, correct: showCorrect ? q.correct : -1} : null, ytn:H.ytN||0, nx:nxYt(), nxImg:(H.qs[H.qi+1]||{}).img||"", ytHere: H.mode==="regie" ? (sndTarget()==="ecran" && H.ytFb!==H.qi) : (sndTarget()==="host" || H.ytFb===H.qi), snd:sndTarget(),
     counts, answered:H.answers.size, connected:connectedCount(),
     endsIn: H.phase==="question" ? leftMs() : 0, wait: H.phase==="question" && H.ytWait, board: boardDue(),
@@ -2149,8 +2239,15 @@ function fitTV(){
 let fitT = 0; window.addEventListener("resize", () => { clearTimeout(fitT); fitT = setTimeout(fitTV, 120); });
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitTV());
 /* ---- rendu (fenêtre écran ou mode écran unique) ---- */
+/* podium en direct, en haut au milieu de l'écran pendant la partie */
+function dPod(T){
+  if(!["question","reveal","leaderboard"].includes(T.phase) || T.view==="season") return "";
+  const top = (T.players||[]).filter(p => p.score > 0 && p.rank <= 3).slice(0,3);
+  if(!top.length) return "";
+  return `<div class="tvpod">${top.map(p => `<span class="tvpod-p" style="--pc:${okCol(p.col)}"><b>${["🥇","🥈","🥉"][p.rank-1]}</b>${esc(p.name)}</span>`).join("")}</div>`;
+}
 function dHead(T){
-  return `<header class="tv-head"><div style="display:flex;align-items:center;gap:1.5vw"><img class="logo" src="logo.png" alt="VandB Quizz"></div>
+  return `<header class="tv-head"><div style="display:flex;align-items:center;gap:1.5vw"><img class="logo" src="logo.png" alt="VandB Quizz"></div>${dPod(T)}
     <div class="tools"><span class="net ${T.online?'ok':'bad'}">${T.online?'En ligne':'Hors ligne'}${T.turn?' · relais ✓':''}</span>
     <button id="fs">⛶ Plein écran</button>${T.ctl?'<button id="gear" class="gear" title="Réglages (admin)" aria-label="Réglages">⚙️</button>':''}</div></header>`;
 }
@@ -2179,6 +2276,20 @@ function dQR(url){
   else box.innerHTML = `<img alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}">`;
   DSP.qrUrl=url; DSP.qrNode=box; return box;
 }
+/* libre-service : bandeau de la salle d'attente (joueurs manquants / compte à rebours) */
+function dLibre(T){
+  const L = T.libre;
+  if(L.go) return `<div class="lfree go"><b>${esc(L.next)}</b> · Préparation de la partie…</div>`;
+  if(L.need > 0) return `<div class="lfree"><span class="lk">🤖 Libre-service · prochaine partie : <b>${esc(L.next)}</b></span><span class="lm">Encore <b>${L.need}</b> joueur${L.need>1?'s':''} pour lancer la partie</span>${L.ready ? `<span class="lh">${L.ready} prêt${L.ready>1?'s':''}</span>` : ''}</div>`;
+  if(L.cd==null) return `<div class="lfree"><span class="lk">🤖 Libre-service · prochaine partie : <b>${esc(L.next)}</b></span><span class="lm">Joueurs prêts : <b>${L.ready} / ${L.n}</b></span><span class="lh">La partie démarre quand tout le monde a appuyé sur <b>✋ Je suis prêt</b> sur son téléphone</span></div>`;
+  return `<div class="lfree on"><span class="lk">🤖 Libre-service · prochaine partie : <b>${esc(L.next)}</b></span><span class="lm">Tout le monde est prêt ! Départ dans <b class="lcd" data-cd>${Math.ceil((L.cd||0)/1000)}</b> s</span></div>`;
+}
+/* comptes à rebours affichés ([data-cd]) : mis à jour chaque seconde */
+function cdRun(ms){
+  clearInterval(DSP.cdI); if(ms==null) return;
+  const end = Date.now() + ms, f = () => { const els = app.querySelectorAll("[data-cd]"); if(!els.length){ clearInterval(DSP.cdI); return; } els.forEach(e => e.textContent = Math.max(0, Math.ceil((end - Date.now())/1000))); };
+  f(); DSP.cdI = setInterval(f, 250);
+}
 function renderDisplay(T){
   DSP.T = T; cancelAnimationFrame(DSP.raf);
   const credit = `<span class="credit">${T.src?'Questions : '+esc(T.src):''}</span>`;
@@ -2194,8 +2305,9 @@ function renderDisplay(T){
         <section class="joincard"><div class="kicker">Scannez pour jouer</div><div id="qrslot"></div>
           <div class="code">ou code <b>${esc(T.code)}</b></div>
           ${local?'<div class="warn">⚠️ Page ouverte en local : les téléphones ne pourront pas rejoindre. Ouvre la version en ligne (GitHub Pages).</div>':''}</section>
-        <section class="players"><h2 id="pcount">${T.players.length ? `${T.players.length} joueur${T.players.length>1?'s':''} prêt${T.players.length>1?'s':''}` : "En attente des joueurs…"}</h2>
-          <div class="chips" id="chips">${T.players.map(p=>`<button class="chip ${p.on?'':'off'}" data-pid="${esc(p.pid)}" style="--pc:${okCol(p.col)}">${avHTML(p)}${esc(p.name)}</button>`).join("")}</div>
+        <section class="players"><h2 id="pcount">${T.players.length ? `${T.players.length} joueur${T.players.length>1?'s':''} ${T.libre?'connecté':'prêt'}${T.players.length>1?'s':''}` : "En attente des joueurs…"}</h2>
+          ${T.libre ? dLibre(T) : ''}
+          <div class="chips" id="chips">${T.players.map(p=>`<button class="chip ${p.on?'':'off'}" data-pid="${esc(p.pid)}" style="--pc:${okCol(p.col)}">${avHTML(p)}${esc(p.name)}${T.libre && p.rd ? ' <span class="rdy">✋</span>' : ''}</button>`).join("")}</div>
           ${T.prizes ? `<div class="lprizes"><h3>🎁 À gagner ce soir</h3><div class="lpl">${T.prizes.map((x,i)=>x?`<div class="lpz p${i+1}"><span class="md">${["🥇","🥈","🥉"][i]}</span><span class="pt">${esc(x)}</span></div>`:'').join("")}</div></div>` : ''}
           ${T.lseason ? `<div class="lseason"><h3>🏆 ${esc(T.seasonName||"Classement de la saison")}</h3>${T.lseason.length ? `<div class="lsl">${T.lseason.map((x,i)=>`<div class="lsr ${x.here?'here':''}" style="--pc:${okCol(x.c)};animation-delay:${i*60}ms"><span class="rk">${x.rank}</span>${avHTML({av:x.av,col:x.c})}<span class="nm">${esc(x.n)}</span>${x.here?'<span class="hb">ce soir</span>':''}<span class="sc">${x.pts} pts</span></div>`).join("")}</div>` : '<p class="muted">Pas encore de points cette saison : la première partie lance le classement !</p>'}</div>` : ''}</section>
       </div>
@@ -2252,7 +2364,7 @@ function renderDisplay(T){
     clearTimeout(DSP.endTm);
     const cyc = END_POD + END_SSN, el = (Date.now()-DSP.endT0) % cyc, showS = !!(T.eseason && T.eseason.length) && el >= END_POD;
     if(T.eseason && T.eseason.length) DSP.endTm = setTimeout(() => { if(DSP.T===T) renderDisplay(T); }, (showS ? cyc - el : END_POD - el) + 30);
-    const again = `<div style="display:flex;justify-content:center">${T.ctl?'<button class="ctl" id="again">Nouvelle partie</button>':''}</div>`;
+    const again = `<div style="display:flex;justify-content:center;align-items:center;gap:1em">${T.libre && T.libre.end!=null ? `<span class="lfree-end">🤖 Retour à la salle d'attente dans <b data-cd>${Math.ceil(T.libre.end/1000)}</b> s</span>` : ''}${T.ctl?'<button class="ctl" id="again">Nouvelle partie</button>':''}</div>`;
     app.innerHTML = showS ? `<div class="tv endseason">${dHead(T)}<div class="lb"><h2>🏆 ${esc(T.seasonName||"Classement de la saison")}</h2>
       ${T.eseason.map((p,i)=>`<div class="row ${p.here?'here':''}" style="animation-delay:${i*90}ms;--pc:${okCol(p.c)}"><span class="rk">${p.rank}</span>${avHTML({av:p.av,col:p.c})}<span class="nm">${esc(p.n)}</span>${p.here?'<span class="hb">ce soir</span>':''}<span class="gain muted">${p.parties} partie${p.parties>1?'s':''}</span><span class="sc">${p.pts} pts</span></div>`).join("")}
       </div>${again}</div>`
@@ -2269,7 +2381,8 @@ function renderDisplay(T){
     if(ft && ft.lastElementChild){ const end = document.createElement("div"); end.className = "tvf-end"; ft.appendChild(end); end.appendChild(ft.children[ft.children.length-2]); end.appendChild(mq); mq.classList.add("infoot"); }
     else if(tv) tv.appendChild(mq);
   }
-  dBind(T);
+  dBind(T); SNAV.restore();
+  cdRun(T.libre ? (T.phase==="lobby" && !T.libre.go && T.libre.cd!=null ? T.libre.cd : T.phase==="end" ? T.libre.end : null) : null);
   const pz2 = $("#pz2"); if(pz2) pz2.onclick = () => togglePause();
   ytSync(T); sndUnlock(T);
   if(T.nxImg) picPreload(T.nxImg); if(T.q && T.q.img) picPreload(T.q.img);
@@ -2709,8 +2822,20 @@ function seasonAdmin(d){
 }
 
 /* ===================== RÉGLAGES (partagés TV / télécommande) ===================== */
-function settingsHTML(s, quizzes, nb){
+function settingsHTML(s, quizzes, nb, libre){
   return `<div class="sform">
+    ${libre ? `<fieldset class="prizes lset"><legend>🤖 Libre-service (sans animateur)</legend>
+      <div class="srow">
+        <label>Joueurs pour lancer<select data-k="lmin">${[1,2,3,4,5,6].map(v=>`<option value="${v}" ${v===(s.lmin||2)?'selected':''}>${v}</option>`).join("")}</select></label>
+        <label>Écran de fin<select data-k="lend">${[30,60,90,120].map(v=>`<option value="${v}" ${v===(s.lend||60)?'selected':''}>${v} s</option>`).join("")}</select></label>
+      </div>
+      <div class="srow">
+        <label>Questions par quiz<select data-k="lnq">${[5,10,15,20,25,30].map(v=>`<option value="${v}" ${v===(s.lnq||15)?'selected':''}>${v}</option>`).join("")}</select></label>
+        <label>Extraits par blind test<select data-k="lnb">${[5,10,15,20,25,30].map(v=>`<option value="${v}" ${v===(s.lnb||10)?'selected':''}>${v}</option>`).join("")}</select></label>
+      </div>
+      <div class="srow">
+        <label>Parties<select data-k="lmix">${[["alt","Quiz et blind test en alternance"],["quiz","Quiz uniquement"],["bt","Blind test uniquement"],["set","Selon le quiz et les thèmes ci-dessous"]].map(([v,l])=>`<option value="${v}" ${(s.lmix||"alt")===v?'selected':''}>${l}</option>`).join("")}</select></label>
+      </div></fieldset>` : ''}
     <label>Nom du bar<input type="text" data-k="bar" value="${esc(s.bar)}" maxlength="24"></label>
     <label>Quiz<select data-k="quiz"><option value="builtin">Banque de questions (${nb}), au choix des thèmes</option>${quizzes.map(z=>`<option value="${esc(z.id)}" ${s.quiz===z.id?'selected':''}>${esc(z.name)} (${z.n})</option>`).join("")}</select></label>
     <details class="scats" ${s.quiz==="builtin"?'':'hidden'}><summary>Thèmes : <b class="th-sum">${esc(themeSummary(new Set(themesOf(s))))}</b> <span class="muted">(modifier)</span></summary>${themePickerHTML(new Set(themesOf(s)))}</details>
@@ -2763,18 +2888,24 @@ function applySetting(k, v){
   else if(k==="vol"||k==="svol") s[k] = Math.max(0, Math.min(100, Math.round(+v||0)));
   else if(k==="son"){ s.son = ["auto","regie","ecran"].includes(v) ? v : "auto"; saveSettings(); renderHost(); pushDisplay(); return; }
   else if(/^prize[123]$/.test(k)){ const p = prizesOf(); p[+k[5]-1] = String(v||"").slice(0,60); s.prizes = p; }
+  else if(k==="lmin") s.lmin = [1,2,3,4,5,6].includes(+v) ? +v : 2;
+  else if(k==="lnq") s.lnq = [5,10,15,20,25,30].includes(+v) ? +v : 15;
+  else if(k==="lnb") s.lnb = [5,10,15,20,25,30].includes(+v) ? +v : 10;
+  else if(k==="lend") s.lend = [30,60,90,120].includes(+v) ? +v : 60;
+  else if(k==="lmix"){ s.lmix = ["alt","quiz","bt","set"].includes(v) ? v : "alt"; H.lnext = s.lmix==="alt" ? "quiz" : s.lmix; }
   else if(k==="seenreset"){ SEEN.reset(); toast("Historique des questions remis à zéro"); renderHost(); return; }
   else if(k==="themes" && Array.isArray(v)){ const ok=new Set(ALL_THEMES()), c=v.filter(x=>ok.has(x)); if(c.length) s.themes=c; }
   else return;
   saveSettings();
   renderHost();
   if(typeof pushDisplay==="function" && H.code) pushDisplay();
+  if(H.libre && /^l(min|mix|nq|nb)$/.test(k)) libreTick(true);
 }
 function quizInfo(){
-  const s=H.settings, z = s.quiz!=="builtin" ? QZ.get(s.quiz) : null;
-  const th = new Set(themesOf(s)), total = z ? z.qs.length : bank().filter(q=>th.has(q[0]+"/"+q[1])).length;
-  const n = s.n ? Math.min(s.n,total) : total;
-  return `${z ? z.name : "Banque : "+themeSummary(th)} · ${n} question${n>1?'s':''} · ${s.time} s${z && z.source ? " · Questions : "+z.source : ""}`;
+  const s=H.settings, z = curQuiz(), k = effKind();
+  const th = new Set(curThemes()), total = z ? z.qs.length : bank().filter(q=>th.has(q[0]+"/"+q[1])).length;
+  const n = curN() ? Math.min(curN(),total) : total;
+  return `${H.libre ? "🤖 Libre-service · " : ""}${z ? z.name : k==="bt" ? "🎵 Blind test, toutes catégories" : k==="quiz" ? "🧠 Quiz, tous les thèmes" : "Banque : "+themeSummary(th)} · ${n} question${n>1?'s':''} · ${s.time} s${z && z.source ? " · Questions : "+z.source : ""}`;
 }
 const adminUrl = () => location.origin + location.pathname + "?room=" + H.code + "&admin=" + H.pin;
 function openHostSettings(){
@@ -2784,7 +2915,7 @@ function openHostSettings(){
   m.innerHTML=`<div class="modal-box wide">
     <h3>⚙️ Réglages de la partie <small class="muted">(visible seulement quand vous ouvrez ce menu)</small></h3>
     <div class="set-grid">
-      <div>${settingsHTML(s, quizzes, bank().length)}
+      <div>${settingsHTML(s, quizzes, bank().length, H.libre)}
         <div class="modal-row"><button class="btn ghost" id="castb">📡 Caster l'écran</button><button class="btn ghost" id="edit">🛠️ Créer / modifier mes quiz</button><a class="btn ghost " href="guide.html" target="_blank" rel="noopener" data-guide>📖 Mode d'emploi staff</a></div></div>
       <div class="remote-card"><div id="aqr" class="qr sm"></div>
         <div><b>🎛️ Télécommande</b><p>Scannez avec votre téléphone ou tablette pour piloter la partie depuis le micro : lancer, avancer, voir la bonne réponse.</p><p>Code ${H.code} · PIN <b class="pin">${H.pin}</b></p></div></div>
@@ -2810,7 +2941,7 @@ function adminState(){
   const q=H.qs[H.qi], counts=[0,0,0,0]; H.answers.forEach(a=>counts[a.choice]++);
   const r=ranking();
   const sd = SEASON.data();
-  return {t:"astate", code:H.code, phase:H.phase, view:H.view, settings:H.settings, paused:!!H.paused, snd:sndTarget(), rsfx: H.phase==="reveal" && H.qs[H.qi] ? H.qs[H.qi].sfx||"" : "", nb:bank().length, info:quizInfo(), local:H.mode==="regie", pin:H.pin,
+  return {t:"astate", code:H.code, phase:H.phase, view:H.view, settings:H.settings, paused:!!H.paused, snd:sndTarget(), rsfx: H.phase==="reveal" && H.qs[H.qi] ? H.qs[H.qi].sfx||"" : "", nb:bank().length, info:quizInfo(), local:H.mode==="regie", pin:H.pin, libre:!!H.libre,
     season:{nom:sd.nom, bareme:sd.bareme, table:seasonTable(sd).slice(0,60).map(x=>({h:x.h,n:x.n,av:x.av,c:x.c,pts:x.pts,rank:x.rank,parties:x.parties})), joueurs:Object.entries(sd.joueurs).map(([h,j])=>({h,n:j.n}))},
     quizzes:QZ.all().map(z=>({id:z.id,name:z.name,n:z.qs.length})),
     players:r.map(p=>{ const a=H.answers.get(p.pid); return {pid:p.pid,hid:p.hid||"",name:p.name,av:p.av,col:p.col,on:p.connected,score:p.score,rank:p.rank,gain:H.lastGain.get(p.pid)||0,season:p.season||null,ans:a?[Math.round(a.t/100),a.choice]:null}; }),
@@ -2914,7 +3045,7 @@ function renderRemote(){
     const mine = A.local ? [] : QZ.all();
     app.innerHTML = `<div class="rm">${top}
       <section class="rcard"><h3>Joueurs (<span id="rpc">${st.players.length}</span>)</h3><div class="rpl" id="rpl">${rPlayers(st, true)}</div></section>
-      <section class="rcard"><h3>Réglages</h3>${settingsHTML(st.settings, st.quizzes, st.nb)}<p class="muted" id="rinfo">${esc(st.info)}</p></section>
+      <section class="rcard"><h3>Réglages</h3>${settingsHTML(st.settings, st.quizzes, st.nb, st.libre)}<p class="muted" id="rinfo">${esc(st.info)}</p></section>
       <div id="rseason">${rSeason(st)}</div>
       ${A.local ? '' : `<section class="rcard"><h3>Mes quiz sur cet appareil</h3>
         ${mine.length ? mine.map(z=>`<div class="rq"><span><b>${esc(z.name)}</b> <small class="muted">${z.qs.length} q.</small></span><button class="btn ghost sm" data-push="${esc(z.id)}">📤 Envoyer à l'écran</button></div>`).join("") : `<p class="muted">Aucun quiz créé sur cet appareil.</p>`}
@@ -3235,10 +3366,18 @@ function renderPlayer(){
   cancelAnimationFrame(P.raf);
   const s=P.st;
   if(s.phase==="lobby"){
-    app.innerHTML = `<div class="ph">${topBar(`<span>${esc(s.bar)}</span>`)}<div class="ph-center">${avHTML(s,"huge")}<h2>Tu es dans la partie !</h2><p>${s.players} joueur${s.players>1?'s':''} connecté${s.players>1?'s':''}.<br>Regarde l'écran, ça commence bientôt.</p>
+    const L = s.libre;
+    const lib = !L ? '' : L.go ? `<div class="lfree go">${esc(L.next)} · préparation…</div>`
+      : (L.cd!=null ? `<div class="lfree on">${esc(L.next)} dans <b data-cd>${Math.ceil(L.cd/1000)}</b> s</div>`
+        : `<div class="lfree">Prochaine partie : <b>${esc(L.next)}</b><br>${L.need > 0 ? `Encore <b>${L.need}</b> joueur${L.need>1?'s':''} pour lancer` : `Prêts : <b>${L.ready} / ${L.n}</b> · on attend tout le monde`}</div>`)
+        + `<button class="btn ${L.ready?'':'ghost'} rdyb" id="rdy">${L.ready?'✅ Prêt ! (toucher pour annuler)':'✋ Je suis prêt'}</button>`;
+    app.innerHTML = `<div class="ph">${topBar(`<img class="plogo" src="logo.png" alt="${esc(s.bar)}">`)}<div class="ph-center">${avHTML(s,"huge")}<h2>Tu es dans la partie !</h2><p>${s.players} joueur${s.players>1?'s':''} connecté${s.players>1?'s':''}.<br>Regarde l'écran, ça commence bientôt.</p>${lib}
       ${s.season ? `<p class="sline">🏆 Saison : <b>${s.season.rank}<sup>${s.season.rank===1?'er':'e'}</sup></b> · ${s.season.pts} pts</p>` : ''}
       <div class="ed-actions" style="justify-content:center"><button class="btn ghost" id="chg">Changer d'avatar</button><button class="btn ghost" id="ssn">🏆 Classement de la saison</button></div></div></div>`;
     $("#chg").onclick = () => playerJoin(true); $("#ssn").onclick = () => seasonPage(true);
+    const rb = $("#rdy"); if(rb) rb.onclick = () => { const on = !L.ready; L.ready = on; try{ P.conn.send({t:"ready", on}); }catch(e){} if(navigator.vibrate) navigator.vibrate(30); renderPlayer(); };
+    clearInterval(P.cdI);
+    if(L && !L.go && L.cd!=null){ const end = Date.now() + L.cd; P.cdI = setInterval(() => { const e = app.querySelector("[data-cd]"); if(!e) return clearInterval(P.cdI); e.textContent = Math.max(0, Math.ceil((end - Date.now())/1000)); }, 250); }
   }
   else if(s.phase==="question"){
     if(s.answered!=null){
@@ -3296,6 +3435,68 @@ if(ADMIN_SIDE){
     location.href = location.pathname + (QS.get("dev") ? "?dev="+encodeURIComponent(QS.get("dev")) : "");
   });
 }
+/* ===================== TÉLÉCOMMANDE DE TV : navigation de bouton en bouton =====================
+   Flèches = passer au bouton voisin dans la direction, OK / Entrée = cliquer, Retour = fermer la fenêtre ouverte.
+   Sur une liste déroulante : ◀ ▶ changent la valeur. Fonctionne sur l'accueil, l'écran TV et les réglages. */
+const SNAV = {
+  sel: 'button:not([disabled]),a[href],input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])',
+  last: null,
+  // case à cocher / curseur : on se repère sur la ligne entière (son libellé)
+  rect(el){ const l = /^(checkbox|radio|range)$/.test(el.type||"") && el.closest("label"); return (l || el).getBoundingClientRect(); },
+  root(){ const ms = document.querySelectorAll(".modal"); return ms.length ? ms[ms.length-1] : document; },
+  items(){ return [...this.root().querySelectorAll(this.sel)].filter(el => { const d = el.closest("details:not([open])"); if(d && !(el.tagName==="SUMMARY" && el.parentElement===d)) return false; const r = el.getBoundingClientRect(); if(!r.width || !r.height) return false; const cs = getComputedStyle(el); return cs.visibility!=="hidden" && cs.pointerEvents!=="none" && !el.closest("[hidden]"); }); },
+  cur(){ const a = document.activeElement; return a && a!==document.body && this.root().contains(a) && a.matches(this.sel) ? a : null; },
+  focus(el){ if(!el) return; document.documentElement.classList.add("kbnav"); try{ el.focus({preventScroll:true}); }catch(e){ el.focus(); } try{ el.scrollIntoView({block:"nearest", inline:"nearest"}); }catch(e){}
+    const r = this.rect(el); this.last = {id: el.id || "", sel: el.dataset && (el.dataset.k || el.dataset.pid || el.dataset.i) || "", x: r.left + r.width/2, y: r.top + r.height/2, r}; },
+  first(){ const it = this.items(); return it.find(el => el.id==="sndunlock") || it.find(el => el.classList.contains("btn") && !el.classList.contains("ghost")) || it.find(el => el.classList.contains("ctl")) || it[0]; },
+  move(dir){
+    const it = this.items(); if(!it.length) return;
+    let c = this.cur();
+    const rt = this.root(); if(!c && rt!==document && !rt.contains(document.activeElement)) return this.focus(it[0]);   // fenêtre qui vient de s'ouvrir : 1er réglage
+    if(!c && this.last){ c = (this.last.id && document.getElementById(this.last.id)) || null; if(c && !it.includes(c)) c = null; }
+    if(!c){ if(!this.last) return this.focus(this.first());
+      // l'écran a été redessiné : on repart du bouton le plus proche de la dernière position
+      const L = this.last; let best = null, bd = 1e9; it.forEach(el => { const r = this.rect(el), d = Math.hypot(r.left + r.width/2 - L.x, r.top + r.height/2 - L.y); if(d < bd){ bd = d; best = el; } }); return this.focus(best); }
+    const a = this.rect(c), ax = a.left + a.width/2, ay = a.top + a.height/2;
+    let best = null, bs = 1e12;
+    it.forEach(el => { if(el===c || c.contains(el) || el.contains(c)) return;
+      const r = this.rect(el), x = r.left + r.width/2, y = r.top + r.height/2;
+      let main, side;
+      if(dir==="right"){ if(r.left < a.right - 2 && x <= ax + 2) return; main = Math.max(0, r.left - a.right); side = Math.max(0, Math.max(a.top, r.top) > Math.min(a.bottom, r.bottom) ? Math.abs(y - ay) : 0); if(x <= ax) return; }
+      else if(dir==="left"){ if(r.right > a.left + 2 && x >= ax - 2) return; main = Math.max(0, a.left - r.right); side = Math.max(a.top, r.top) > Math.min(a.bottom, r.bottom) ? Math.abs(y - ay) : 0; if(x >= ax) return; }
+      else if(dir==="down"){ if(r.top < a.bottom - 2 && y <= ay + 2) return; main = Math.max(0, r.top - a.bottom); side = Math.max(a.left, r.left) > Math.min(a.right, r.right) ? Math.abs(x - ax) : 0; if(y <= ay) return; }
+      else { if(r.bottom > a.top + 2 && y >= ay - 2) return; main = Math.max(0, a.top - r.bottom); side = Math.max(a.left, r.left) > Math.min(a.right, r.right) ? Math.abs(x - ax) : 0; if(y >= ay) return; }
+      const sc = main + side * 3 + (dir==="left"||dir==="right" ? Math.abs(y - ay) : Math.abs(x - ax)) * 0.3;
+      if(sc < bs){ bs = sc; best = el; } });
+    if(best) this.focus(best);
+  },
+  restore(){ if(!document.documentElement.classList.contains("kbnav") || !this.last || this.cur()) return;
+    const L = this.last, it = this.items(); let el = (L.id && document.getElementById(L.id)) || null;
+    if(!el && L.sel) el = it.find(x => x.dataset && (x.dataset.k===L.sel || x.dataset.pid===L.sel || x.dataset.i===L.sel)) || null;
+    if(el && it.includes(el)) this.focus(el); },
+  back(){ const ms = document.querySelectorAll(".modal"); if(!ms.length) return false; const m = ms[ms.length-1], cl = m.querySelector("#cl"); if(cl) cl.click(); else m.remove(); setTimeout(() => this.restore(), 50); return true; }
+};
+window.addEventListener("keydown", e => {
+  if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key, code = e.keyCode, t = e.target, tag = (t && t.tagName) || "";
+  const dir = {ArrowLeft:"left", ArrowRight:"right", ArrowUp:"up", ArrowDown:"down"}[k] || {37:"left",38:"up",39:"right",40:"down"}[code];
+  const typing = tag==="TEXTAREA" || (tag==="INPUT" && !/^(checkbox|radio|range|button|submit)$/.test(t.type));
+  if(k==="Escape" || k==="GoBack" || k==="BrowserBack" || code===461 || code===10009 || (k==="Backspace" && !typing)){ if(SNAV.back()){ e.preventDefault(); e.stopImmediatePropagation(); } return; }
+  if(dir){
+    if(typing && (dir==="left" || dir==="right")) return;            // déplacer le curseur dans le texte
+    if(tag==="TEXTAREA") return;
+    if(tag==="INPUT" && t.type==="range" && (dir==="left" || dir==="right")) return;
+    if(tag==="SELECT" && (dir==="left" || dir==="right")){            // ◀ ▶ : valeur précédente / suivante
+      e.preventDefault(); e.stopImmediatePropagation();
+      const i = Math.max(0, Math.min(t.options.length-1, t.selectedIndex + (dir==="right" ? 1 : -1)));
+      if(i!==t.selectedIndex){ t.selectedIndex = i; t.dispatchEvent(new Event("change", {bubbles:true})); }
+      return; }
+    e.preventDefault(); e.stopImmediatePropagation(); SNAV.move(dir); return;
+  }
+  if(k==="Enter" && tag==="INPUT" && /^(checkbox|radio)$/.test(t.type)){ e.preventDefault(); e.stopImmediatePropagation(); t.click(); }
+}, true);
+document.addEventListener("mousedown", () => document.documentElement.classList.remove("kbnav"), true);
+
 /* ===================== DÉMARRAGE ===================== */
 if(QS.has("admin") && ROOM) adminRemote(QS.get("admin"));
 else if(ROOM) playerJoin();
@@ -3303,6 +3504,7 @@ else if(QS.get("edit")) editorHome();
 else if(QS.has("ecran")) displayWindow();
 else if(QS.get("tv")) remoteTV(QS.get("tv"));
 else if(QS.has("host")) startHost(null, "ecran");
+else if(QS.has("libre")){ const sv = store.get(SAVE_KEY, null); if(sv && sv.libre && sv.phase && Date.now()-sv.at < 6*3600e3) startHost(sv); else { store.del(SAVE_KEY); H.libre = true; startHost(null, "ecran"); } }
 else home();
 </script>
 </body>
