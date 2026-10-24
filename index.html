@@ -5626,7 +5626,9 @@ function renderRemote() {
         rq.onclick = openRemoteQR; };
     if (st.phase === "lobby") {
         var sig = JSON.stringify(st.quizzes) + st.nb;
-        if (A.view === "lobby" && A.qsig === sig && $(".rm .sform")) {
+        // saisie en cours dans un champ texte (lots, nom du bar) : on ne redessine pas les réglages, sinon le clavier du téléphone se ferme à chaque lettre
+        var ae = document.activeElement, typing = !!(ae && ae.closest && ae.closest(".rm .sform") && (ae.tagName === "TEXTAREA" || (ae.tagName === "INPUT" && /^(text|search|number|)$/.test(ae.type || ""))));
+        if (A.view === "lobby" && (A.qsig === sig || typing) && $(".rm .sform")) {
             $("#rpl").innerHTML = rPlayers(st, true);
             $("#rpc").textContent = st.players.length;
             $("#go").disabled = !st.players.length;
